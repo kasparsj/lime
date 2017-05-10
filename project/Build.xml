@@ -429,6 +429,7 @@
 				<vflag name="-framework" value="AudioUnit" />
 				<vflag name="-framework" value="OpenAL"/>
 				<vflag name="-framework" value="CoreMotion"/>
+				<vflag name="-framework" value="CoreText"/>
 				
 				<lib name="-ldl" />
 				<lib name="-lEGL" />
