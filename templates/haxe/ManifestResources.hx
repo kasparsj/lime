@@ -24,11 +24,12 @@ import sys.FileSystem;
 		
 		preloadLibraries = new Array ();
 		preloadLibraryNames = new Array ();
+		
 		var rootPath = null;
 		
-		if (config != null && Reflect.hasField (config, "assetsPrefix")) {
+		if (config != null && Reflect.hasField (config, "rootPath")) {
 			
-			rootPath = Reflect.field (config, "assetsPrefix");
+			rootPath = Reflect.field (config, "rootPath");
 			
 		}
 		
@@ -46,7 +47,7 @@ import sys.FileSystem;
 		
 		Assets.defaultRootPath = rootPath;
 		
-		#if (openfl && !flash)
+		#if (openfl && !flash && !display)
 		::if (assets != null)::::foreach assets::::if (type == "font")::openfl.text.Font.registerFont (__ASSET__OPENFL__::flatName::);
 		::end::::end::::end::
 		#end
