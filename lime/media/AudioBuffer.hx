@@ -306,6 +306,8 @@ class AudioBuffer {
 					
 				});
 
+				audioBuffer.__srcHowl.load ();
+
 			}
 			
 			#else
@@ -367,6 +369,8 @@ class AudioBuffer {
 				promise.error (null);
 				
 			});
+
+			audioBuffer.__srcHowl.load ();
 
 		} else {
 			
