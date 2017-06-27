@@ -35,7 +35,7 @@ import sys.FileSystem;
 		
 		if (rootPath == null) {
 			
-			#if (ios || tvos)
+			#if (ios || tvos || emscripten)
 			rootPath = "assets/";
 			#elseif (windows && !cs)
 			rootPath = FileSystem.absolutePath (haxe.io.Path.directory (#if (haxe_ver >= 3.3) Sys.programPath () #else Sys.executablePath () #end)) + "/";
@@ -91,14 +91,14 @@ import sys.FileSystem;
 
 #else
 
-::if (assets != null)::::foreach assets::::if (type == "font")::@:keep #if display private #end class __ASSET__::flatName:: extends lime.text.Font { public function new () { #if !html5 __fontPath = "::targetPath::"; #end name = "::fontName::"; super (); }}
+::if (assets != null)::::foreach assets::::if (type == "font")::@:keep @:expose('__ASSET__::flatName::') #if display private #end class __ASSET__::flatName:: extends lime.text.Font { public function new () { #if !html5 __fontPath = "::targetPath::"; #end name = "::fontName::"; super (); }}
 ::end::::end::::end::
 
 #end
 
 #if (openfl && !flash)
 
-::if (assets != null)::::foreach assets::::if (type == "font")::@:keep #if display private #end class __ASSET__OPENFL__::flatName:: extends openfl.text.Font { public function new () { ::if (embed)::var font = new __ASSET__::flatName:: (); src = font.src; name = font.name;::else::#if !html5 __fontPath = #if (ios || tvos) "assets/" + #end "::targetPath::"; #end name = "::fontName::";::end:: super (); }}
+::if (assets != null)::::foreach assets::::if (type == "font")::@:keep @:expose('__ASSET__OPENFL__::flatName::') #if display private #end class __ASSET__OPENFL__::flatName:: extends openfl.text.Font { public function new () { ::if (embed)::var font = new __ASSET__::flatName:: (); src = font.src; name = font.name;::else::#if !html5 __fontPath = #if (ios || tvos) "assets/" + #end "::targetPath::"; #end name = "::fontName::";::end:: super (); }}
 ::end::::end::::end::
 
 #end
