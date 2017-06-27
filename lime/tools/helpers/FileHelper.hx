@@ -83,7 +83,6 @@ class FileHelper {
 			"nmml" => TEXT,
 			"lime" => TEXT,
 			"svg" => TEXT,
-			"mp3" => SOUND,
 			
 		];
 		
