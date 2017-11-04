@@ -22,9 +22,6 @@ package;
 			orientation: "::WIN_ORIENTATION::",
 			packageName: "::meta.packageName::",
 			version: "::meta.version::",
-			#if flash
-			assetsPrefix: flash.Lib.current.loaderInfo.parameters.assetsPrefix,
-			#end
 			windows: [
 				::foreach windows::
 				{

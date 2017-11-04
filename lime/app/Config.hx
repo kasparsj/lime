@@ -3,10 +3,6 @@ package lime.app;
 
 typedef Config = {
 	
-	#if (((js && html5) || flash))
-	@:deprecated @:optional var assetsPrefix:String;
-	#end
-
 	/**
 	 * A build number
 	 *
