@@ -1,3 +1,116 @@
+5.8.0 (10/24/2017)
+------------------
+
+* Added `httpRequest.withCredentials` for sending cookies with web requests
+* Added initial support for `Touch.onCancel` events
+* Restored `false` as the default `httpRequest.enableResponseHeaders` value
+* Improved image loading to better support progress events on some browsers
+* Improved support for `HTTPRequest` headers on native platforms
+* Improved the handling of `lime.utils.Log` output on web browsers
+* Improved `lime.utils.ObjectPool` to allow abstract types
+* Improved AIR builds to support the `<certificate />` tag for signing
+* Improved the default window size for AIR output for mobile platforms
+* Improved AIR template to respect `<window allow-high-dpi="" />` for iOS
+* Improved AIR template to support additional icon sizes for mobile
+* Fixed the behavior of tailing the `trace` log on Windows/Flash target
+* Fixed HTML5 "same origin" calculation for CORS requests
+* Fixed return to Android fullscreen after losing window focus
+* Fixed support for `ANDROID_GRADLE_TASK` with command-line arguments
+* Fixed support for relative provisioning profile paths for AIR target
+
+
+5.7.1 (10/12/2017)
+------------------
+
+* Updated default `MACOSX_DEPLOYMENT_TARGET` on macOS to 10.7
+* Improved native `HTTPRequest` to complete as error if response status is error
+* Fixed `HTTPRequest` to treat HTTP status code 400 as an error
+
+
+5.7.0 (10/10/2017)
+------------------
+
+* Updated Freetype to 2.7.1, compiled with Harfbuzz/PNG support enabled
+* Added initial Adobe AIR backend support for multiple windows, alerts, etc
+* Added `threadPool.onRun` to be notified when work is about to be run
+* Added `ModuleHelper.addModuleSource` to improve JS modules from HXP projects
+* Added initial Dockerfile script
+* Added a polyfill for `performance.now()` to restore iPhone 4 HTML5 support
+* Improved Raspberry Pi support by adding "Escape" as a default key to exit
+* Improved support for non-premultiplied alpha in `imageDataUtil.gaussianBlur`
+* Improved native `HTTPRequest` to size bytes initially based on Content-Length
+* Improved support for Xcode 9.1
+* Improved support for combined characters in `TextLayout`
+* Fixed setting of `MACOSX_DEPLOYMENT_TARGET` on macOS
+* Fixed support for resolving iOS provisioning profiles for AIR/iOS on Windows
+* Fixed the addition of the HTML5 default cache break string for assets
+* Fixed default asset type assignment for files with upper-case file extensions
+* Fixed support for Raspberry Pi
+* Fixed `threadPool.onProgress` to dispatch in the proper foreground thread
+* Fixed native `HTTPRequest` to calculate timeout from when requests run
+
+
+5.6.0 (09/26/2017)
+------------------
+
+* Added `lime.system.FileWatcher` for notifications of file events
+* Added support for color output on the Windows 10 standard command prompt
+* Added support for `lime config NAME VALUE` to add/set config values
+* Added initial template support for `lime test winjs` for HTML5/UWP support
+* Updated haxe.io.Bytes to match current official version
+* Improved key events to always set the key modifier on alt/ctrl/shift key press
+* Improved support for Adobe AIR iOS and Android builds
+* Improved Android builds to minimize to background on back button and not exit
+* Improved Linux target to build without HXCPP liblinuxcompat.a
+* Improved support for setting `-dce` on the command-line
+* Fixed support for setting `--window-minimized`, maximized and hidden using CLI
+* Fixed escaping of spaces in Windows paths
+* Fixed the behavior of `image.copyPixels` using an alpha image
+* Fixed the class path order when embedding Flash assets in certain conditions
+* Fixed support for Tizen HTML5 applications
+* Fixed progress event update on HTML5 HTTPRequest uploads
+* Fixed `ImageHelper.resizeImage` to properly handle null parameters
+
+
+5.5.0 (09/12/2017)
+------------------
+
+* Added an instance-based API for cURL (such as `new CURL ()`)
+* Added `<config:ios non-exempt-encryption="true" />` setting value
+* Added generation of source map when minifying HTML5 on debug
+* Deprecated `lime.net.curl.CURLEasy` in favor of `CURL`
+* Updated tinyfiledialogs to 2.9.3
+* Updated bundled Google Closure Compiler to v20170806
+* Improved the functionality of `System.endianness`
+* Improved Adobe AIR `deploy` command to generate a \*.bundle file
+* Improved the behavior of native HTTPRequest for better memory management
+* Fixed endianness issues in `image.setPixels`
+* Fixed support for `image.copyPixels` using alpha image and offset point
+* Fixed support for newer HXCPP, including dynamic libs only on Haxe 3.2.1
+* Fixed ability to exclude default architectures on builds
+* Fixed support for `<window fullscreen="false" />` on Android
+* Fixed minor issues caused by detecting some AWD files as text
+
+
+5.4.0 (08/25/2017)
+------------------
+
+* Added tooling for Adobe AIR (`lime test air`, `lime test windows -air`, etc)
+* Added externs for Adobe AIR classes and types
+* Added `<haxelib repository="" />` for choosing a custom haxelib repository path
+* Added OpenGL ES 3 API support (currently enabled on Linux and Emscripten)
+* Added support for setting `HAXELIB_PATH` environment variable in projects
+* Changed the output directory to not include the build type by default
+* Improved HTML5 to default images to canvas, not a typed array
+* Improved HXP to handle `-nocolor`, `-verbose` and other compile flags
+* Improved HXP to be able to update environment variables for build process
+* Fixed tvOS target to use `<config:tvos provisioning-profile="" />`
+* Fixed Android builds when using an Android SDK older than API 23
+* Fixed an issue when running command-line tools from a root directory
+* Fixed UTF-8 `charCodeAt` when index is out of range
+* Fixed the `strength` property of `ImageDataUtils.gaussianBlur`
+
+
 5.3.0 (07/31/2017)
 ------------------
 

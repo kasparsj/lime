@@ -20,6 +20,8 @@ import utils.CreateTemplate;
 import utils.JavaExternGenerator;
 import utils.PlatformSetup;
 
+@:access(lime.project.HXProject)
+
 
 class CommandLineTools {
 	
@@ -468,7 +470,10 @@ class CommandLineTools {
 			
 		}
 		
+		
 		for (arg in args) {
+			
+			// TODO: Allow -rebuild without locking native binary?
 			
 			if (arg == "-nocffi" || arg == "-rebuild") {
 				
@@ -715,6 +720,10 @@ class CommandLineTools {
 					
 					platform = new TVOSPlatform (command, project, targetFlags);
 				
+				case AIR:
+					
+					platform = new AIRPlatform (command, project, targetFlags);
+				
 				default:
 				
 			}
@@ -735,7 +744,7 @@ class CommandLineTools {
 	}
 	
 	
-	private function compress () { 
+	private function compress () {
 		
 		if (words.length > 0) {
 			
@@ -848,7 +857,7 @@ class CommandLineTools {
 			
 			LogHelper.println (File.getContent (Sys.getEnv ("LIME_CONFIG")));
 			
-		} else {
+		} else if (words.length == 1) {
 			
 			if (config.defines.exists (words[0])) {
 				
@@ -857,6 +866,143 @@ class CommandLineTools {
 			} else {
 				
 				LogHelper.error ("\"" + words[0] + "\" is undefined");
+				
+			}
+			
+		} else {
+			
+			// TODO: Cleanup
+			
+			var path = Sys.getEnv ("LIME_CONFIG");
+			
+			var name = words.shift ();
+			var value = words.join (" ");
+			
+			try {
+				
+				if (!FileSystem.exists (value) && FileSystem.exists (PathHelper.expand (value))) {
+					
+					value = PathHelper.expand (value);
+					
+				}
+				
+			} catch (e:Dynamic) {}
+			
+			if (FileSystem.exists (path)) {
+				
+				var doRemove = (name == "remove");
+				
+				if (doRemove) {
+					
+					name = value;
+					
+				}
+				
+				var configText = File.getContent (path);
+				var lines = configText.split ("\n");
+				
+				var findSet = "<set name=\"" + name + "\"";
+				var findSetenv = "<setenv name=\"" + name + "\"";
+				var findDefine = "<define name=\"" + name + "\"";
+				var line, i = 0, index = 0, found = false;
+				
+				while (i < lines.length) {
+					
+					line = lines[i];
+					
+					if ((index = line.indexOf (findSet)) > -1) {
+						
+						found = true;
+						
+						if (doRemove) {
+							
+							lines.splice (i, 1);
+							continue;
+							
+						}
+						
+						lines[i] = line.substr (0, index) + "<set name=\"" + name + "\" value=\"" + value + "\" />";
+						
+					}
+					
+					if ((index = line.indexOf (findSetenv)) > -1) {
+						
+						found = true;
+						
+						if (doRemove) {
+							
+							lines.splice (i, 1);
+							continue;
+							
+						}
+						
+						lines[i] = line.substr (0, index) + "<setenv name=\"" + name + "\" value=\"" + value + "\" />";
+						
+					}
+					
+					if ((index = line.indexOf (findDefine)) > -1) {
+						
+						found = true;
+						
+						if (doRemove) {
+							
+							lines.splice (i, 1);
+							continue;
+							
+						}
+						
+						lines[i] = line.substr (0, index) + "<define name=\"" + name + "\" value=\"" + value + "\" />";
+						
+					}
+					
+					i++;
+					
+				}
+				
+				if (!found && !doRemove && lines.length > 2) {
+					
+					var insertPoint = lines.length - 3;
+					
+					if (StringTools.trim (lines[lines.length - 1]) == "") {
+						
+						insertPoint--;
+						
+					}
+					
+					if (StringTools.trim (lines[insertPoint + 1]) != "") {
+						
+						lines.insert (insertPoint + 1, "\t");
+						
+					}
+					
+					lines.insert (insertPoint + 1, "\t<define name=\"" + name + "\" value=\"" + value + "\" />");
+					
+				}
+				
+				var content = lines.join ("\n");
+				File.saveContent (path, content);
+				
+				if (doRemove) {
+					
+					if (found) {
+						
+						LogHelper.info ("Removed define \"" + name + "\"");
+						
+					} else {
+						
+						LogHelper.info ("There is no define \"" + name + "\"");
+						
+					}
+					
+				} else {
+					
+					LogHelper.info ("Set \"" + name + "\" to \"" + value + "\"");
+					
+				}
+				
+			} else {
+				
+				LogHelper.error ("Cannot find \"" + path + "\"");
 				
 			}
 			
@@ -1483,6 +1629,34 @@ class CommandLineTools {
 			
 		}
 		
+		if (targetFlags.exists ("air")) {
+			
+			switch (targetName) {
+				
+				case "android":
+					
+					targetName = "air";
+					targetFlags.set ("android", "");
+				
+				case "ios":
+					
+					targetName = "air";
+					targetFlags.set ("ios", "");
+				
+				case "windows":
+					
+					targetName = "air";
+					targetFlags.set ("windows", "");
+				
+				case "mac", "macos":
+					
+					targetName = "air";
+					targetFlags.set ("mac", "");
+				
+			}
+			
+		}
+		
 		var target = null;
 		
 		switch (targetName) {
@@ -1535,6 +1709,12 @@ class CommandLineTools {
 				
 				target = Platform.EMSCRIPTEN;
 				targetFlags.set ("webassembly", "");
+			
+			case "winjs", "uwp":
+				
+				target = Platform.WINDOWS;
+				targetFlags.set ("uwp", "");
+				targetFlags.set ("winjs", "");
 			
 			default:
 				
@@ -1692,6 +1872,30 @@ class CommandLineTools {
 				}
 				
 			}
+			
+		}
+		
+		if (project != null && project.needRerun && !project.targetFlags.exists ("norerun")) {
+			
+			HaxelibHelper.pathOverrides.remove ("lime");
+			var workingDirectory = Sys.getCwd ();
+			var limePath = HaxelibHelper.getPath (new Haxelib ("lime"), true, true);
+			Sys.setCwd (workingDirectory);
+			
+			LogHelper.info ("", LogHelper.accentColor + "Requesting alternate tools from custom haxelib path...\x1b[0m\n\n");
+			
+			var args = Sys.args ();
+			args.pop ();
+			
+			Sys.setCwd (limePath);
+			
+			args = [ PathHelper.combine (limePath, "run.n") ].concat (args);
+			args.push ("--haxelib-lime=" + limePath);
+			args.push ("-norerun");
+			args.push (workingDirectory);
+			
+			Sys.exit (Sys.command ("neko", args));
+			return null;
 			
 		}
 		
@@ -2076,6 +2280,7 @@ class CommandLineTools {
 						
 						if (field == "window-allow-high-dpi") property = "allowHighDPI";
 						if (field == "window-color-depth") property = "colorDepth";
+						if (field == "meta-build-number") property = "buildNumber";
 						
 						var fieldReference = Reflect.field (overrides, fieldName);
 						
@@ -2097,6 +2302,11 @@ class CommandLineTools {
 								
 							} else if (Std.is (propertyReference, String)) {
 								
+								Reflect.setField (fieldReference, property, argValue);
+								
+							} else {
+								
+								// TODO: Only certain properties?
 								Reflect.setField (fieldReference, property, argValue);
 								
 							}
@@ -2141,11 +2351,11 @@ class CommandLineTools {
 				
 			} else if (argument.substr (0, 1) == "-") {
 				
-				if (argument.substr (1, 1) == "-") {
+				if (argument == "-dce" || argument.substr (1, 1) == "-") {
 					
 					overrides.haxeflags.push (argument);
 					
-					if (argument == "--remap" || argument == "--connect") {
+					if (argument == "--remap" || argument == "--connect" || argument == "-dce") {
 						
 						catchHaxeFlag = true;
 						

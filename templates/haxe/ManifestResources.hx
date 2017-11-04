@@ -37,7 +37,7 @@ import sys.FileSystem;
 			
 			#if (ios || tvos || emscripten)
 			rootPath = "assets/";
-			#elseif (windows && !cs)
+			#elseif (sys && windows && !cs)
 			rootPath = FileSystem.absolutePath (haxe.io.Path.directory (#if (haxe_ver >= 3.3) Sys.programPath () #else Sys.executablePath () #end)) + "/";
 			#else
 			rootPath = "";
@@ -75,8 +75,8 @@ import sys.FileSystem;
 #if !display
 #if flash
 
-::foreach assets::::if (embed)::::if (type == "image")::@:keep @:bind #if display private #end class __ASSET__::flatName:: extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }::else::@:keep @:bind #if display private #end class __ASSET__::flatName:: extends ::flashClass:: { }
-::end::::end::::end::
+::foreach assets::::if (embed != false)::::if (type == "image")::@:keep @:bind #if display private #end class __ASSET__::flatName:: extends flash.display.BitmapData { public function new () { super (0, 0, true, 0); } }::else::@:keep @:bind #if display private #end class __ASSET__::flatName:: extends ::flashClass:: { }::end::
+::end::::end::
 
 #elseif (desktop || cpp)
 

@@ -68,8 +68,10 @@ class HXProject {
 	public var windows:Array<WindowData>;
 	
 	private var defaultApp:ApplicationData;
+	private var defaultArchitectures:Array<Architecture>;
 	private var defaultMeta:MetaData;
 	private var defaultWindow:WindowData;
+	private var needRerun:Bool;
 	
 	public static var _command:String;
 	public static var _debug:Bool;
@@ -102,6 +104,10 @@ class HXProject {
 		HXProject._templatePaths = inputData.templatePaths;
 		HXProject._userDefines = inputData.userDefines;
 		HXProject._environment = inputData.environment;
+		LogHelper.verbose = inputData.logVerbose;
+		LogHelper.enableColor = inputData.logEnableColor;
+		ProcessHelper.dryRun = inputData.processDryRun;
+		HaxelibHelper.debug = inputData.haxelibDebug;
 		
 		initialize ();
 		
@@ -130,12 +136,29 @@ class HXProject {
 		
 		defaultMeta = { title: "MyApplication", description: "", packageName: "com.example.myapp", version: "1.0.0", company: "", companyUrl: "", buildNumber: null, companyId: "" }
 		defaultApp = { main: "Main", file: "MyApplication", path: "bin", preloader: "", swfVersion: 17, url: "", init: null }
-		defaultWindow = { width: 800, height: 600, parameters: "{}", background: 0xFFFFFF, fps: 30, hardware: true, display: 0, resizable: true, borderless: false, orientation: Orientation.AUTO, vsync: false, fullscreen: false, allowHighDPI: true, alwaysOnTop: false, antialiasing: 0, allowShaders: true, requireShaders: false, depthBuffer: false, stencilBuffer: false, colorDepth: 16 }
+		defaultWindow = { width: 800, height: 600, parameters: "{}", background: 0xFFFFFF, fps: 30, hardware: true, display: 0, resizable: true, borderless: false, orientation: Orientation.AUTO, vsync: false, fullscreen: false, allowHighDPI: true, alwaysOnTop: false, antialiasing: 0, allowShaders: true, requireShaders: false, depthBuffer: false, stencilBuffer: false, colorDepth: 16, maximized: false, minimized: false, hidden: false }
 		
 		platformType = PlatformType.DESKTOP;
 		architectures = [];
 		
 		switch (target) {
+			
+			case AIR:
+				
+				if (targetFlags.exists ("ios") || targetFlags.exists ("android")) {
+					
+					platformType = PlatformType.MOBILE;
+					
+					defaultWindow.width = 0;
+					defaultWindow.height = 0;
+					
+				} else {
+					
+					platformType = PlatformType.DESKTOP;
+					
+				}
+				
+				architectures = [];
 			
 			case FLASH:
 				
@@ -195,13 +218,20 @@ class HXProject {
 				defaultWindow.fullscreen = true;
 				defaultWindow.requireShaders = true;
 			
-			case WINDOWS, MAC, LINUX:
+			case WINDOWS:
 				
 				platformType = PlatformType.DESKTOP;
 				
-				if (target == Platform.LINUX || target == Platform.MAC) {
+				if (targetFlags.exists ("uwp") || targetFlags.exists ("winjs")) {
 					
-					architectures = [ PlatformHelper.hostArchitecture ];
+					architectures = [];
+					
+					targetFlags.set ("uwp", "");
+					targetFlags.set ("winjs", "");
+					
+					defaultWindow.width = 0;
+					defaultWindow.height = 0;
+					defaultWindow.fps = 60;
 					
 				} else {
 					
@@ -211,9 +241,16 @@ class HXProject {
 				
 				defaultWindow.allowHighDPI = false;
 			
+			case MAC, LINUX:
+				
+				platformType = PlatformType.DESKTOP;
+				architectures = [ PlatformHelper.hostArchitecture ];
+				
+				defaultWindow.allowHighDPI = false;
+			
 			default:
 				
-				// TODO: Better handle platform type for pluggable targets
+				// TODO: Better handling of platform type for pluggable targets
 				
 				platformType = PlatformType.CONSOLE;
 				
@@ -223,6 +260,8 @@ class HXProject {
 				defaultWindow.fullscreen = true;
 			
 		}
+		
+		defaultArchitectures = architectures.copy ();
 		
 		meta = ObjectHelper.copyFields (defaultMeta, {});
 		app = ObjectHelper.copyFields (defaultApp, {});
@@ -495,6 +534,9 @@ class HXProject {
 		
 		input.close ();
 		
+		var cacheDryRun = ProcessHelper.dryRun;
+		ProcessHelper.dryRun = false;
+		
 		ProcessHelper.runCommand ("", "haxe", args);
 		
 		var inputFile = PathHelper.combine (tempDirectory, "input.dat");
@@ -509,7 +551,11 @@ class HXProject {
 			targetFlags: HXProject._targetFlags,
 			templatePaths: HXProject._templatePaths,
 			userDefines: HXProject._userDefines,
-			environment: HXProject._environment
+			environment: HXProject._environment,
+			logVerbose: LogHelper.verbose,
+			logEnableColor: LogHelper.enableColor,
+			processDryRun: cacheDryRun,
+			haxelibDebug: HaxelibHelper.debug
 			
 		});
 		
@@ -525,6 +571,8 @@ class HXProject {
 			Sys.exit (1);
 			
 		}
+		
+		ProcessHelper.dryRun = cacheDryRun;
 		
 		var tPaths:Array<String> = [];
 		
@@ -555,6 +603,12 @@ class HXProject {
 		PathHelper.removeDirectory (tempDirectory);
 		
 		if (project != null) {
+			
+			for (key in project.environment.keys ()) {
+				
+				Sys.putEnv (key, project.environment[key]);
+				
+			}
 			
 			var defines = StringMapHelper.copy (userDefines);
 			StringMapHelper.copyKeys (project.defines, defines);
@@ -818,7 +872,30 @@ class HXProject {
 			
 			config.merge (project.config);
 			
-			architectures = ArrayHelper.concatUnique (architectures, project.architectures);
+			for (architecture in project.architectures) {
+				
+				if (defaultArchitectures.indexOf (architecture) == -1) {
+					
+					architectures.push (architecture);
+					
+				}
+				
+			}
+			
+			if (project.architectures.length > 0) {
+				
+				for (architecture in defaultArchitectures) {
+					
+					if (project.architectures.indexOf (architecture) == -1) {
+						
+						architectures.remove (architecture);
+						
+					}
+					
+				}
+				
+			}
+			
 			assets = ArrayHelper.concatUnique (assets, project.assets);
 			dependencies = ArrayHelper.concatUnique (dependencies, project.dependencies, true);
 			haxeflags = ArrayHelper.concatUnique (haxeflags, project.haxeflags);
@@ -937,7 +1014,46 @@ class HXProject {
 	
 	public function setenv (name:String, value:String):Void {
 		
-		Sys.putEnv (name, value);
+		if (value == null) {
+			
+			environment.remove (name);
+			value = "";
+			
+		}
+		
+		if (name == "HAXELIB_PATH") {
+			
+			var currentPath = HaxelibHelper.getRepositoryPath ();
+			Sys.putEnv (name, value);
+			var newPath = HaxelibHelper.getRepositoryPath (true);
+			
+			if (currentPath != newPath) {
+				
+				var valid = try { (newPath != null && newPath != "" && FileSystem.exists (FileSystem.fullPath (newPath))); } catch (e:Dynamic) { false; }
+				
+				if (!valid) {
+					
+					LogHelper.error ("The specified haxelib repository path \"" + value + "\" does not exist");
+					
+				} else {
+					
+					needRerun = true;
+					
+				}
+				
+			}
+			
+		} else {
+			
+			Sys.putEnv (name, value);
+			
+		}
+		
+		if (value != "") {
+			
+			environment.set (name, value);
+			
+		}
 		
 	}
 	
@@ -989,7 +1105,7 @@ class HXProject {
 		
 		context.BUILD_DIR = app.path;
 		
-		for (key in environment.keys ()) { 
+		for (key in environment.keys ()) {
 			
 			Reflect.setField (context, "ENV_" + key, environment.get (key));
 			
@@ -1072,7 +1188,7 @@ class HXProject {
 				
 				if (asset.embed == null) {
 					
-					embeddedAsset.embed = (platformType == PlatformType.WEB);
+					embeddedAsset.embed = (platformType == PlatformType.WEB || target == AIR);
 					
 				}
 				

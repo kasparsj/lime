@@ -6,9 +6,9 @@ import haxe.Timer;
 import lime.app.Future;
 import lime.app.Promise;
 import lime.net.curl.CURLCode;
-import lime.net.curl.CURLEasy;
 import lime.net.curl.CURL;
 import lime.net.HTTPRequest;
+import lime.net.HTTPRequestHeader;
 import lime.net.HTTPRequestMethod;
 import lime.system.ThreadPool;
 
@@ -30,76 +30,49 @@ class NativeHTTPRequest {
 	private var bytes:Bytes;
 	private var bytesLoaded:Int;
 	private var bytesTotal:Int;
+	private var canceled:Bool;
 	private var curl:CURL;
 	private var parent:_IHTTPRequest;
 	private var promise:Promise<Bytes>;
 	private var readPosition:Int;
+	private var writePosition:Int;
+	private var timeout:Timer;
 	
 	
 	public function new () {
 		
-		curl = 0;
-		promise = new Promise<Bytes> ();
+		curl = null;
+		timeout = null;
 		
 	}
 	
 	
 	public function cancel ():Void {
 		
-		if (curl != 0) {
+		canceled = true;
+		
+		if (curl != null) {
 			
-			CURLEasy.reset (curl);
-			CURLEasy.perform (curl);
+			// This is probably run from a different thread if cURL is running
+			// TODO
+			
+			//CURLEasy.cleanup (curl);
+			//CURLEasy.reset (curl);
+			//CURLEasy.perform (curl);
+			
+		}
+		
+		if (timeout != null) {
+			
+			timeout.stop ();
+			timeout = null;
 			
 		}
 		
 	}
 	
 	
-	public function init (parent:_IHTTPRequest):Void {
-		
-		this.parent = parent;
-		
-	}
-	
-	
-	public function loadData (uri:String, binary:Bool = true):Future<Bytes> {
-		
-		if (threadPool == null) {
-			
-			CURL.globalInit (CURL.GLOBAL_ALL);
-			
-			threadPool = new ThreadPool (1, 5);
-			threadPool.doWork.add (threadPool_doWork);
-			threadPool.onComplete.add (threadPool_onComplete);
-			threadPool.onError.add (threadPool_onError);
-			
-		}
-		
-		if (parent.timeout > 0) {
-			
-			Timer.delay (function () {
-				
-				if (bytesLoaded == 0 && bytesTotal == 0 && !promise.isComplete && !promise.isError) {
-					
-					//cancel ();
-					
-					promise.error (CURLCode.OPERATION_TIMEDOUT);
-					
-				}
-				
-			}, parent.timeout);
-			
-		}
-		
-		threadPool.queue ({ instance: this, uri: uri, binary: binary });
-		
-		return promise.future;
-		
-	}
-	
-	
-	private function loadFile (path:String):Void {
+	private function doWork_loadFile (path:String):Void {
 		
 		var index = path.indexOf ("?");
 		
@@ -119,7 +92,7 @@ class NativeHTTPRequest {
 		
 		if (path == null #if (sys && !android) || !FileSystem.exists (path) #end) {
 			
-			threadPool.sendError ({ promise: promise, error: "Cannot load file: " + path });
+			threadPool.sendError ({ instance: this, promise: promise, error: "Cannot load file: " + path });
 			
 		} else {
 			
@@ -127,11 +100,11 @@ class NativeHTTPRequest {
 			
 			if (bytes != null) {
 				
-				threadPool.sendComplete ({ promise: promise, result: bytes });
+				threadPool.sendComplete ({ instance: this, promise: promise, result: bytes });
 				
 			} else {
 				
-				threadPool.sendError ({ promise: promise, error: "Cannot load file: " + path });
+				threadPool.sendError ({ instance: this, promise: promise, error: "Cannot load file: " + path });
 				
 			}
 			
@@ -140,48 +113,29 @@ class NativeHTTPRequest {
 	}
 	
 	
-	public function loadText (uri:String):Future<String> {
+	private function doWork_loadURL (uri:String, binary:Bool):Void {
 		
-		var promise = new Promise<String> ();
-		var future = loadData (uri, false);
-		
-		future.onProgress (promise.progress);
-		future.onError (promise.error);
-		
-		future.onComplete (function (bytes) {
+		if (uri == null) {
 			
-			if (bytes == null) {
-				
-				promise.complete (null);
-				
-			} else {
-				
-				promise.complete (bytes.getString (0, bytes.length));
-				
-			}
+			threadPool.sendError ({ instance: this, promise: promise, error: "The URI must not be null" });
+			return;
 			
-		});
-		
-		return promise.future;
-		
-	}
-	
-	
-	private function loadURL (uri:String, binary:Bool):Void {
+		}
 		
 		bytes = Bytes.alloc (0);
 		
 		bytesLoaded = 0;
 		bytesTotal = 0;
 		readPosition = 0;
+		writePosition = 0;
 		
-		if (curl == 0) {
+		if (curl == null) {
 			
-			curl = CURLEasy.init ();
+			curl = new CURL ();
 			
 		} else {
 			
-			CURLEasy.reset (curl);
+			curl.reset ();
 			
 		}
 		
@@ -219,44 +173,49 @@ class NativeHTTPRequest {
 					
 				}
 				
+			} else {
+				
+				data = Bytes.alloc (0);
+				
 			}
+			
 		}
 		
-		CURLEasy.setopt (curl, URL, uri);
+		curl.setOption (URL, uri);
 		
 		switch (parent.method) {
 			
 			case HEAD:
 				
-				CURLEasy.setopt (curl, NOBODY, true);
+				curl.setOption (NOBODY, true);
 			
 			case GET:
 				
-				CURLEasy.setopt (curl, HTTPGET, true);
+				curl.setOption (HTTPGET, true);
 			
 			case POST:
 				
-				CURLEasy.setopt (curl, POST, true);
-				CURLEasy.setopt (curl, READFUNCTION, curl_onRead.bind (_, data));
-				CURLEasy.setopt (curl, POSTFIELDSIZE, data.length);
-				CURLEasy.setopt (curl, INFILESIZE, data.length);
+				curl.setOption (POST, true);
+				curl.setOption (READFUNCTION, curl_onRead.bind (_, data));
+				curl.setOption (POSTFIELDSIZE, data.length);
+				curl.setOption (INFILESIZE, data.length);
 			
 			case PUT:
 				
-				CURLEasy.setopt (curl, UPLOAD, true);
-				CURLEasy.setopt (curl, READFUNCTION, curl_onRead.bind (_, data));
-				CURLEasy.setopt (curl, INFILESIZE, data.length);
+				curl.setOption (UPLOAD, true);
+				curl.setOption (READFUNCTION, curl_onRead.bind (_, data));
+				curl.setOption (INFILESIZE, data.length);
 			
 			case _:
 				
-				CURLEasy.setopt (curl, CUSTOMREQUEST, Std.string (parent.method));
-				CURLEasy.setopt (curl, READFUNCTION, curl_onRead.bind (_, data));
-				CURLEasy.setopt (curl, INFILESIZE, data.length);
+				curl.setOption (CUSTOMREQUEST, Std.string (parent.method));
+				curl.setOption (READFUNCTION, curl_onRead.bind (_, data));
+				curl.setOption (INFILESIZE, data.length);
 			
 		}
 		
-		CURLEasy.setopt (curl, FOLLOWLOCATION, parent.followRedirects);
-		CURLEasy.setopt (curl, AUTOREFERER, true);
+		curl.setOption (FOLLOWLOCATION, parent.followRedirects);
+		curl.setOption (AUTOREFERER, true);
 		
 		var headers = [];
 		headers.push ("Expect: ");
@@ -303,41 +262,138 @@ class NativeHTTPRequest {
 			
 		}
 		
-		CURLEasy.setopt (curl, HTTPHEADER, headers);
+		curl.setOption (HTTPHEADER, headers);
 		
-		CURLEasy.setopt (curl, PROGRESSFUNCTION, curl_onProgress);
-		CURLEasy.setopt (curl, WRITEFUNCTION, curl_onWrite);
+		curl.setOption (PROGRESSFUNCTION, curl_onProgress);
+		curl.setOption (WRITEFUNCTION, curl_onWrite);
 		
 		if (parent.enableResponseHeaders) {
 			
-			CURLEasy.setopt (curl, HEADERFUNCTION, curl_onHeader);
+			parent.responseHeaders = [];
 			
 		}
 		
-		CURLEasy.setopt (curl, SSL_VERIFYPEER, false);
-		CURLEasy.setopt (curl, SSL_VERIFYHOST, 0);
-		CURLEasy.setopt (curl, USERAGENT, parent.userAgent == null ? "libcurl-agent/1.0" : parent.userAgent);
+		curl.setOption (HEADERFUNCTION, curl_onHeader);
 		
-		//CURLEasy.setopt (curl, CONNECTTIMEOUT, 30);
-		CURLEasy.setopt (curl, NOSIGNAL, true);
+		// TODO: Add support for cookies: https://curl.haxx.se/docs/http-cookies.html
 		
-		CURLEasy.setopt (curl, TRANSFERTEXT, !binary);
+		if (parent.withCredentials) {
+			
+			// TODO: Send cookies with request
+			
+		}
 		
-		var result = CURLEasy.perform (curl);
-		parent.responseStatus = CURLEasy.getinfo (curl, RESPONSE_CODE);
+		curl.setOption (SSL_VERIFYPEER, false);
+		curl.setOption (SSL_VERIFYHOST, 0);
+		curl.setOption (USERAGENT, parent.userAgent == null ? "libcurl-agent/1.0" : parent.userAgent);
+		
+		//curl.setOption (CONNECTTIMEOUT, 30);
+		curl.setOption (NOSIGNAL, true);
+		
+		curl.setOption (TRANSFERTEXT, !binary);
+		
+		var result = curl.perform ();
+		parent.responseStatus = curl.getInfo (RESPONSE_CODE);
+		
+		curl.cleanup ();
+		curl = null;
 		
 		if (result == CURLCode.OK) {
 			
-			threadPool.sendComplete ({ promise: promise, result: bytes });
+			if ((parent.responseStatus >= 200 && parent.responseStatus < 400) || parent.responseStatus == 0) {
+				
+				threadPool.sendComplete ({ instance: this, promise: promise, result: bytes });
+				
+			} else if (bytes != null) {
+				
+				threadPool.sendError ({ instance: this, promise: promise, error: bytes.getString (0, bytes.length) });
+				
+			} else {
+				
+				threadPool.sendError ({ instance: this, promise: promise, error: 'Status ${parent.responseStatus}' });
+				
+			}
 			
 		} else {
 			
-			threadPool.sendError ({ promise: promise, error: result });
+			threadPool.sendError ({ instance: this, promise: promise, error: CURL.strerror (result) });
 			
 		}
 		
 	}
 	
+	
+	public function init (parent:_IHTTPRequest):Void {
+		
+		this.parent = parent;
+		
+	}
+	
+	
+	public function loadData (uri:String, binary:Bool = true):Future<Bytes> {
+		
+		var promise = new Promise<Bytes> ();
+		this.promise = promise;
+		
+		if (threadPool == null) {
+			
+			CURL.globalInit (CURL.GLOBAL_ALL);
+			
+			threadPool = new ThreadPool (1, 4);
+			threadPool.doWork.add (threadPool_doWork);
+			threadPool.onRun.add (threadPool_onRun);
+			threadPool.onProgress.add (threadPool_onProgress);
+			threadPool.onComplete.add (threadPool_onComplete);
+			threadPool.onError.add (threadPool_onError);
+			
+		}
+		
+		canceled = false;
+		threadPool.queue ({ instance: this, uri: uri, binary: binary, timeout: parent.timeout });
+		
+		return promise.future;
+		
+	}
+	
+	
+	public function loadText (uri:String):Future<String> {
+		
+		var promise = new Promise<String> ();
+		var future = loadData (uri, false);
+		
+		future.onProgress (promise.progress);
+		future.onError (promise.error);
+		
+		future.onComplete (function (bytes) {
+			
+			if (bytes == null) {
+				
+				promise.complete (null);
+				
+			} else {
+				
+				promise.complete (bytes.getString (0, bytes.length));
+				
+			}
+			
+		});
+		
+		return promise.future;
+		
+	}
+	
+
+	private function growBuffer (length:Int) {
+
+		if (length > bytes.length) {
+
+			var cacheBytes = bytes;
+			bytes = Bytes.alloc (length);
+			bytes.blit (0, cacheBytes, 0, cacheBytes.length);
+		
+		}
+
+	}
 	
 	
 	
@@ -348,9 +404,25 @@ class NativeHTTPRequest {
 	
 	private function curl_onHeader (output:Bytes, size:Int, nmemb:Int):Int {
 		
-		parent.responseHeaders = [];
+		var parts = Std.string (output).split (': ');
 		
-		// TODO
+		if (parts.length == 2) {
+			
+			if (parent.enableResponseHeaders) {
+				
+				parent.responseHeaders.push (new HTTPRequestHeader (parts[0], parts[1]));
+				
+			}
+			
+			switch (parts[0]) {
+				
+				case 'Content-Length': 
+					
+					growBuffer (Std.parseInt (parts[1]));
+				
+			}
+			
+		}
 		
 		return size * nmemb;
 		
@@ -366,7 +438,7 @@ class NativeHTTPRequest {
 			if (uptotal > bytesTotal) bytesTotal = Std.int (uptotal);
 			if (dltotal > bytesTotal) bytesTotal = Std.int (dltotal);
 			
-			promise.progress (bytesLoaded, bytesTotal);
+			threadPool.sendProgress ({ instance: this, promise: promise, bytesLoaded: bytesLoaded, bytesTotal: bytesTotal });
 			
 		}
 		
@@ -406,11 +478,11 @@ class NativeHTTPRequest {
 	
 	private function curl_onWrite (output:Bytes, size:Int, nmemb:Int):Int {
 		
-		var cacheBytes = bytes;
-		bytes = Bytes.alloc (bytes.length + output.length);
-		bytes.blit (0, cacheBytes, 0, cacheBytes.length);
-		bytes.blit (cacheBytes.length, output, 0, output.length);
-		
+		growBuffer (writePosition + output.length);
+		bytes.blit (writePosition, output, 0, output.length);
+
+		writePosition += output.length;
+
 		return size * nmemb;
 		
 	}
@@ -424,11 +496,11 @@ class NativeHTTPRequest {
 		
 		if (uri.indexOf ("http://") == -1 && uri.indexOf ("https://") == -1) {
 			
-			instance.loadFile (uri);
+			instance.doWork_loadFile (uri);
 			
 		} else {
 			
-			instance.loadURL (uri, binary);
+			instance.doWork_loadURL (uri, binary);
 			
 		}
 		
@@ -438,7 +510,20 @@ class NativeHTTPRequest {
 	private static function threadPool_onComplete (state:Dynamic):Void {
 		
 		var promise:Promise<Bytes> = state.promise;
+		if (promise.isError) return;
 		promise.complete (state.result);
+		
+		var instance = state.instance;
+		
+		if (instance.timeout != null) {
+			
+			instance.timeout.stop ();
+			instance.timeout = null;
+			
+		}
+		
+		instance.bytes = null;
+		instance.promise = null;
 		
 	}
 	
@@ -447,6 +532,48 @@ class NativeHTTPRequest {
 		
 		var promise:Promise<Bytes> = state.promise;
 		promise.error (state.error);
+		
+		var instance = state.instance;
+		
+		if (instance.timeout != null) {
+			
+			instance.timeout.stop ();
+			instance.timeout = null;
+			
+		}
+		
+		instance.bytes = null;
+		instance.promise = null;
+		
+	}
+	
+	
+	private static function threadPool_onProgress (state:Dynamic):Void {
+		
+		var promise:Promise<Bytes> = state.promise;
+		if (promise.isComplete || promise.isError) return;
+		promise.progress (state.bytesLoaded, state.bytesTotal);
+		
+	}
+	
+	
+	private static function threadPool_onRun (state:Dynamic):Void {
+		
+		if (state.timeout > 0) {
+			
+			state.instance.timeout = Timer.delay (function () {
+				
+				if (state.promise != null && state.instance.bytesLoaded == 0 && state.instance.bytesTotal == 0 && !state.promise.isComplete && !state.promise.isError) {
+					
+					//cancel ();
+					
+					state.promise.error (CURL.strerror (CURLCode.OPERATION_TIMEDOUT));
+					
+				}
+				
+			}, state.timeout);
+			
+		}
 		
 	}
 	

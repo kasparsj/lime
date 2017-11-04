@@ -15,6 +15,7 @@ import lime.math.Rectangle;
 import lime.system.Clipboard;
 import lime.system.Display;
 import lime.system.DisplayMode;
+import lime.system.JNI;
 import lime.system.Sensor;
 import lime.system.SensorType;
 import lime.system.System;
@@ -347,6 +348,14 @@ class NativeApplication {
 				
 			}
 			
+			#if rpi
+			if (keyCode == ESCAPE && modifier == KeyModifier.NONE && type == KEY_UP && !window.onKeyUp.canceled) {
+				
+				System.exit (0);
+				
+			}
+			#end
+			
 			#elseif mac
 			
 			if (keyCode == F) {
@@ -377,7 +386,10 @@ class NativeApplication {
 			
 			if (keyCode == APP_CONTROL_BACK && modifier == KeyModifier.NONE && type == KEY_UP && !window.onKeyUp.canceled) {
 				
-				System.exit (0);
+				var mainActivity = JNI.createStaticField ("org/haxe/extension/Extension", "mainActivity", "Landroid/app/Activity;");
+				var moveTaskToBack = JNI.createMemberMethod ("android/app/Activity", "moveTaskToBack", "(Z)Z");
+				
+				moveTaskToBack (mainActivity.get (), true);
 				
 			}
 			

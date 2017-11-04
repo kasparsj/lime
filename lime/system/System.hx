@@ -6,11 +6,18 @@ import lime._backend.native.NativeCFFI;
 import lime.app.Application;
 import lime.app.Config;
 import lime.math.Rectangle;
+import lime.utils.ArrayBuffer;
+import lime.utils.UInt8Array;
+import lime.utils.UInt16Array;
 
 #if flash
 import flash.net.URLRequest;
 import flash.system.Capabilities;
 import flash.Lib;
+#end
+
+#if air
+import flash.desktop.NativeApplication;
 #end
 
 #if (js && html5)
@@ -160,24 +167,8 @@ class System {
 	
 	public static function exit (code:Int):Void {
 		
-		#if android
-		
-		if (code == 0) {
-			
-			var mainActivity = JNI.createStaticField ("org/haxe/extension/Extension", "mainActivity", "Landroid/app/Activity;");
-			var moveTaskToBack = JNI.createMemberMethod ("android/app/Activity", "moveTaskToBack", "(Z)Z");
-			
-			moveTaskToBack (mainActivity.get (), true);
-			
-		}
-		
-		#end
-		
-		#if (sys && !macro)
-		
+		#if ((sys || air) && !macro)
 		if (Application.current != null) {
-			
-			// TODO: Clean exit?
 			
 			Application.current.onExit.dispatch (code);
 			
@@ -188,9 +179,12 @@ class System {
 			}
 			
 		}
+		#end
 		
+		#if sys
 		Sys.exit (code);
-		
+		#elseif air
+		NativeApplication.nativeApplication.exit (code);
 		#end
 		
 	}
@@ -321,7 +315,7 @@ class System {
 		
 		if (path != null) {
 			
-			#if windows
+			#if (sys && windows)
 			
 			Sys.command ("start", [ path ]);
 			
@@ -593,13 +587,23 @@ class System {
 	
 	private static function get_endianness ():Endian {
 		
-		// TODO: Make this smarter
+		if (endianness == null) {
+			
+			#if (ps3 || wiiu || flash)
+			return BIG_ENDIAN;
+			#else
+			var arrayBuffer = new ArrayBuffer (2);
+			var uint8Array = new UInt8Array (arrayBuffer);
+			var uint16array = new UInt16Array (arrayBuffer);
+			uint8Array[0] = 0xAA;
+			uint8Array[1] = 0xBB;
+			if (uint16array[0] == 0xAABB) endianness = BIG_ENDIAN;
+			else endianness = LITTLE_ENDIAN;
+			#end
+			
+		}
 		
-		#if (ps3 || wiiu || flash)
-		return BIG_ENDIAN;
-		#else
-		return LITTLE_ENDIAN;
-		#end
+		return endianness;
 		
 	}
 	
