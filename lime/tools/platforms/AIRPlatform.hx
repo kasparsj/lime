@@ -296,39 +296,39 @@ class AIRPlatform extends FlashPlatform {
 		FileHelper.recursiveCopyTemplate (project.templatePaths, "air/hxml", targetDirectory + "/haxe", context);
 		FileHelper.recursiveCopyTemplate (project.templatePaths, "air/template", targetDirectory, context);
 		
-		if (embedded) {
-			
-			var files = [ "debug.hxml", "release.hxml", "final.hxml" ];
-			var path, hxml, lines, output;
-			
-			for (file in files) {
-				
-				path = targetDirectory + "/haxe/" + file;
-				hxml = File.getContent (path);
-				
-				if (hxml.indexOf ("-swf-header") > -1) {
-					
-					lines = ~/[\r\n]+/g.split (hxml);
-					output = [];
-					
-					for (line in lines) {
-						
-						if (line.indexOf ("-swf-header") > -1) continue;
-						output.push (line);
-						
-					}
-					
-					if (output.length < lines.length) {
-						
-						File.saveContent (path, output.join ("\n"));
-						
-					}
-					
-				}
-				
-			}
-			
-		}
+//		if (embedded) {
+//
+//			var files = [ "debug.hxml", "release.hxml", "final.hxml" ];
+//			var path, hxml, lines, output;
+//
+//			for (file in files) {
+//
+//				path = targetDirectory + "/haxe/" + file;
+//				hxml = File.getContent (path);
+//
+//				if (hxml.indexOf ("-swf-header") > -1) {
+//
+//					lines = ~/[\r\n]+/g.split (hxml);
+//					output = [];
+//
+//					for (line in lines) {
+//
+//						if (line.indexOf ("-swf-header") > -1) continue;
+//						output.push (line);
+//
+//					}
+//
+//					if (output.length < lines.length) {
+//
+//						File.saveContent (path, output.join ("\n"));
+//
+//					}
+//
+//				}
+//
+//			}
+//
+//		}
 		
 		for (asset in project.assets) {
 			
