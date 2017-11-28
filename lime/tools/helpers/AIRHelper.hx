@@ -161,8 +161,22 @@ class AIRHelper {
 			args.push (fileDirectory);
 			
 		}
-		
-		args = args.concat (files);
+
+		var filesAndDirs:Array<String> = [];
+		for (file in files) {
+			var fileOrDir:String = file;
+			var c1 = fileOrDir.indexOf("/");
+			var c2 = fileOrDir.indexOf("\\");
+			if( (c1 > -1 && c1 < c2) || (c2 == -1 && c1 > -1)) {
+				fileOrDir = fileOrDir.substr(0,c1);
+			} else if( (c2 > -1 && c2 < c1) || (c1 == -1 && c2 > -1)) {
+				fileOrDir = fileOrDir.substr(0,c2);
+			}
+			if (filesAndDirs.indexOf(fileOrDir) == -1) {
+				filesAndDirs.push(fileOrDir);
+			}
+		}
+		args = args.concat (filesAndDirs);
 
 		var extDirs:Array<String> = getExtDirs(project);
 
