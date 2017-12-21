@@ -110,7 +110,7 @@ class Image {
 	public var y:Float;
 	
 	
-	#if (js && html5 && es5get)
+	#if commonjs
 	private static function __init__ () {
 		
 		var p = untyped Image.prototype;
@@ -365,9 +365,7 @@ class Image {
 			
 			case CANVAS:
 				
-				// The data path appears to be much faster, even with no alpha image
-				
-				//if (alphaImage != null || sourceImage.type != CANVAS) {
+				if (alphaImage != null || sourceImage.type != CANVAS) {
 					
 					ImageCanvasUtil.convertToData (this);
 					ImageCanvasUtil.convertToData (sourceImage);
@@ -375,13 +373,13 @@ class Image {
 					
 					ImageDataUtil.copyPixels (this, sourceImage, sourceRect, destPoint, alphaImage, alphaPoint, mergeAlpha);
 					
-				//} else {
-					//
-					//ImageCanvasUtil.convertToCanvas (this);
-					//ImageCanvasUtil.convertToCanvas (sourceImage);
-					//ImageCanvasUtil.copyPixels (this, sourceImage, sourceRect, destPoint, alphaImage, alphaPoint, mergeAlpha);
-					//
-				//}
+				} else {
+
+					ImageCanvasUtil.convertToCanvas (this);
+					ImageCanvasUtil.convertToCanvas (sourceImage);
+					ImageCanvasUtil.copyPixels (this, sourceImage, sourceRect, destPoint, alphaImage, alphaPoint, mergeAlpha);
+					
+				}
 			
 			case DATA:
 				
