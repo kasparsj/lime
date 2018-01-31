@@ -5,6 +5,7 @@
 #include "AL/al.h"
 #include "AL/alc.h"
 #ifdef LIME_OPENALSOFT
+// TODO: Can we support EFX on macOS?
 #include "AL/alext.h"
 #endif
 #endif
@@ -22,8 +23,15 @@ namespace lime {
 	std::map<void*, value> alcObjects;
 	
 	
+	#ifdef LIME_OPENALSOFT
+	void lime_al_delete_auxiliary_effect_slot (value aux);
+	#endif
 	void lime_al_delete_buffer (value buffer);
 	void lime_al_delete_source (value source);
+	#ifdef LIME_OPENALSOFT
+	void lime_al_delete_effect (value effect);
+	void lime_al_delete_filter (value filter);
+	#endif
 	
 	
 	void gc_al_buffer (value buffer) {
@@ -33,11 +41,36 @@ namespace lime {
 	}
 	
 	
+	#ifdef LIME_OPENALSOFT
+	void gc_al_auxiliary_effect_slot (value aux) {
+		
+		lime_al_delete_auxiliary_effect_slot (aux);
+		
+	}
+	#endif
+	
+	
 	void gc_al_source (value source) {
 		
 		lime_al_delete_source (source);
 		
 	}
+	
+	
+	#ifdef LIME_OPENALSOFT
+	void gc_al_effect (value effect) {
+		
+		lime_al_delete_effect (effect);
+		
+	}
+	
+	
+	void gc_al_filter (value filter) {
+		
+		lime_al_delete_filter (filter);
+		
+	}
+	#endif
 	
 	
 	void gc_alc_object (value object) {
@@ -47,11 +80,93 @@ namespace lime {
 	}
 	
 	
+	void lime_al_auxf (value aux, int param, float value) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (aux);
+		alAuxiliaryEffectSlotf (id, param, value);
+		#endif
+		
+	}
+	
+	
+	void lime_al_auxfv (value aux, int param, value values) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (aux);
+		
+		if (!val_is_null (values)) {
+			
+			int size = val_array_size (values);
+			ALfloat *data = new ALfloat[size];
+			
+			for (int i = 0; i < size; ++i) {
+				
+				data[i] = (ALfloat)val_float (val_array_i (values, i));
+				
+			}
+			
+			alAuxiliaryEffectSlotfv (id, param, data);
+			delete[] data;
+			
+		}
+		#endif
+		
+	}
+	
+	
+	void lime_al_auxi (value aux, int param, value val) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (aux);
+		ALuint data;
+		
+		if (param == AL_EFFECTSLOT_EFFECT) {
+			
+			data = (ALuint)(uintptr_t)val_data (val);
+			
+		} else {
+			
+			data = val_int (val);
+			
+		}
+		
+		alAuxiliaryEffectSloti (id, param, data);
+		#endif
+		
+	}
+	
+	
+	void lime_al_auxiv (value aux, int param, value values) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (aux);
+		
+		if (!val_is_null (values)) {
+			
+			int size = val_array_size (values);
+			ALint* data = new ALint[size];
+			
+			for (int i = 0; i < size; ++i) {
+				
+				data[i] = (ALint)val_int (val_array_i (values, i));
+				
+			}
+			
+			alAuxiliaryEffectSlotiv (id, param, data);
+			delete[] data;
+			
+		}
+		#endif
+		
+	}
+	
+	
 	void lime_al_buffer_data (value buffer, int format, value data, int size, int freq) {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (buffer);
 		ArrayBufferView bufferView (data);
-		alBufferData (id, format, bufferView.Data (), size, freq);
+		alBufferData(id, format, bufferView.Data (), size, freq);
 		
 	}
 	
@@ -73,10 +188,10 @@ namespace lime {
 	
 	
 	void lime_al_bufferf (value buffer, int param, float value) {
-		
+
 		ALuint id = (ALuint)(uintptr_t)val_data (buffer);
 		alBufferf (id, param, value);
-		
+
 	}
 	
 	
@@ -84,7 +199,7 @@ namespace lime {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (buffer);
 		
-		if (val_is_null (values) == false) {
+		if (!val_is_null (values)) {
 			
 			int size = val_array_size (values);
 			ALfloat *data = new ALfloat[size];
@@ -106,7 +221,7 @@ namespace lime {
 	void lime_al_bufferi (value buffer, int param, int value) {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (buffer);
-		alBufferi (id, param, value);
+		alBufferi(id, param, value);
 		
 	}
 	
@@ -115,7 +230,7 @@ namespace lime {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (buffer);
 		
-		if (val_is_null (values) == false) {
+		if (!val_is_null (values)) {
 			
 			int size = val_array_size (values);
 			ALint* data = new ALint[size];
@@ -156,6 +271,22 @@ namespace lime {
 	}
 	
 	
+	void lime_al_delete_auxiliary_effect_slot (value aux) {
+		
+		#ifdef LIME_OPENALSOFT
+		if (!val_is_null (aux)) {
+			
+			ALuint data = (ALuint)(uintptr_t)val_data (aux);
+			val_gc (aux, 0);
+			alDeleteAuxiliaryEffectSlots ((ALuint)1, &data);
+			alObjects.erase (data);
+			
+		}
+		#endif
+		
+	}
+	
+	
 	void lime_al_delete_buffer (value buffer) {
 		
 		if (!val_is_null (buffer)) {
@@ -172,7 +303,7 @@ namespace lime {
 	
 	void lime_al_delete_buffers (int n, value buffers) {
 		
-		if (val_is_null (buffers) == false) {
+		if (!val_is_null (buffers)) {
 			
 			int size = val_array_size (buffers);
 			ALuint* data = new ALuint[size];
@@ -195,6 +326,36 @@ namespace lime {
 	}
 	
 	
+	void lime_al_delete_effect (value effect) {
+		
+		#ifdef LIME_OPENALSOFT
+		if (!val_is_null (effect)) {
+			
+			ALuint data = (ALuint)(uintptr_t)val_data (effect);
+			alDeleteEffects (1, &data);
+			val_gc (effect, 0);
+			
+		}
+		#endif
+		
+	}
+	
+	
+	void lime_al_delete_filter (value filter) {
+		
+		#ifdef LIME_OPENALSOFT
+		if (!val_is_null (filter)) {
+			
+			ALuint data = (ALuint)(uintptr_t)val_data (filter);
+			alDeleteFilters (1, &data);
+			val_gc (filter, 0);
+			
+		}
+		#endif
+		
+	}
+	
+	
 	void lime_al_delete_source (value source) {
 		
 		if (!val_is_null (source)) {
@@ -210,7 +371,7 @@ namespace lime {
 	
 	void lime_al_delete_sources (int n, value sources) {
 		
-		if (val_is_null (sources) == false) {
+		if (!val_is_null (sources)) {
 			
 			int size = val_array_size (sources);
 			ALuint* data = new ALuint[size];
@@ -260,9 +421,116 @@ namespace lime {
 	}
 	
 	
+	void lime_al_effectf (value effect, int param, float value) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (effect);
+		alEffectf (id, param, value);
+		#endif
+		
+	}
+	
+	
+	void lime_al_effectfv (value effect, int param, value values) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (effect);
+		
+		if (!val_is_null (values)) {
+			
+			int size = val_array_size (values);
+			ALfloat *data = new ALfloat[size];
+			
+			for (int i = 0; i < size; ++i) {
+				
+				data[i] = (ALfloat)val_float (val_array_i (values, i));
+				
+			}
+			
+			alEffectfv (id, param, data);
+			delete[] data;
+			
+		}
+		#endif
+		
+	}
+	
+	
+	void lime_al_effecti (value effect, int param, int value) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (effect);
+		alEffecti (id, param, value);
+		#endif
+		
+	}
+	
+	
+	void lime_al_effectiv (value effect, int param, value values) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (effect);
+		
+		if (!val_is_null (values)) {
+			
+			int size = val_array_size (values);
+			ALint* data = new ALint[size];
+			
+			for (int i = 0; i < size; ++i) {
+				
+				data[i] = (ALint)val_int (val_array_i (values, i));
+				
+			}
+			
+			alEffectiv (id, param, data);
+			delete[] data;
+			
+		}
+		#endif
+		
+	}
+	
+	
 	void lime_al_enable (int capability) {
 		
 		alEnable (capability);
+		
+	}
+	
+	
+	void lime_al_filteri (value filter, int param, value val) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (filter);
+		ALuint data;
+		
+		data = val_int (val);
+		
+		alFilteri (id, param, data);
+		#endif
+		
+	}
+	
+	
+	void lime_al_filterf (value filter, int param, float value) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (filter);
+		alFilterf (id, param, value);
+		#endif
+		
+	}
+	
+	
+	value lime_al_gen_aux () {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint aux;
+		alGenAuxiliaryEffectSlots ((ALuint)1, &aux);
+		return CFFIPointer ((void*)(uintptr_t)aux, gc_al_auxiliary_effect_slot);
+		#else
+		return alloc_null ();
+		#endif
 		
 	}
 	
@@ -300,6 +568,32 @@ namespace lime {
 		
 		delete[] buffers;
 		return result;
+		
+	}
+	
+	
+	value lime_al_gen_effect () {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint effect;
+		alGenEffects ((ALuint)1, &effect);
+		return CFFIPointer ((void*)(uintptr_t)effect, gc_al_effect);
+		#else
+		return alloc_null ();
+		#endif
+		
+	}
+	
+	
+	value lime_al_gen_filter () {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint filter;
+		alGenFilters ((ALuint)1, &filter);
+		return CFFIPointer ((void*)(uintptr_t)filter, gc_al_filter);
+		#else
+		return alloc_null ();
+		#endif
 		
 	}
 	
@@ -382,9 +676,9 @@ namespace lime {
 		alGetBuffer3i (id, param, &val1, &val2, &val3);
 		
 		value result = alloc_array (3);
-		val_array_set_i (result, 0, alloc_int(val1));
-		val_array_set_i (result, 1, alloc_int(val2));
-		val_array_set_i (result, 2, alloc_int(val3));
+		val_array_set_i (result, 0, alloc_int (val1));
+		val_array_set_i (result, 1, alloc_int (val2));
+		val_array_set_i (result, 2, alloc_int (val3));
 		return result;
 		
 	}
@@ -486,6 +780,20 @@ namespace lime {
 	int lime_al_get_error () {
 		
 		return alGetError ();
+		
+	}
+	
+	
+	int lime_al_get_filteri (value filter, int param) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (filter);
+		ALint data;
+		alGetFilteri (id, param, &data);
+		return data;
+		#else
+		return 0;
+		#endif
 		
 	}
 	
@@ -727,7 +1035,7 @@ namespace lime {
 	
 	
 	value lime_al_get_sourceiv (value source, int param, int count) {
-		
+
 		ALuint id = (ALuint)(uintptr_t)val_data (source);
 		ALint* values = new ALint[count];
 		alGetSourceiv (id, param, values);
@@ -754,10 +1062,34 @@ namespace lime {
 	}
 	
 	
+	bool lime_al_is_aux (value aux) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (aux);
+		return alIsAuxiliaryEffectSlot (id);
+		#else
+		return false;
+		#endif
+		
+	}
+	
+	
 	bool lime_al_is_buffer (value buffer) {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (buffer);
 		return alIsBuffer (id);
+		
+	}
+	
+	
+	bool lime_al_is_effect (value effect) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (effect);
+		return alIsEffect (id);
+		#else
+		return false;
+		#endif
 		
 	}
 	
@@ -771,7 +1103,23 @@ namespace lime {
 	
 	bool lime_al_is_extension_present (HxString extname) {
 		
+		#ifdef LIME_OPENALSOFT
 		return alIsExtensionPresent (extname.__s);
+		#else
+		return false;
+		#endif
+		
+	}
+	
+	
+	bool lime_al_is_filter (value filter) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (filter);
+		return alIsSource (id);
+		#else
+		return false;
+		#endif
 		
 	}
 	
@@ -807,7 +1155,7 @@ namespace lime {
 	
 	void lime_al_listenerfv (int param, value values) {
 		
-		if (val_is_null (values) == false) {
+		if (!val_is_null (values)) {
 			
 			int size = val_array_size (values);
 			ALfloat *data = new ALfloat[size];
@@ -835,7 +1183,7 @@ namespace lime {
 	
 	void lime_al_listeneriv (int param, value values) {
 		
-		if (val_is_null (values) == false) {
+		if (!val_is_null (values)) {
 			
 			int size = val_array_size (values);
 			ALint* data = new ALint[size];
@@ -854,6 +1202,26 @@ namespace lime {
 	}
 	
 	
+	void lime_al_remove_direct_filter (value source) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (source);
+		alSourcei (id, AL_DIRECT_FILTER, AL_FILTER_NULL);
+		#endif
+		
+	}
+	
+	
+	void lime_al_remove_send (value source, int index) {
+		
+		#ifdef LIME_OPENALSOFT
+		ALuint id = (ALuint)(uintptr_t)val_data (source);
+		alSource3i (id, AL_AUXILIARY_SEND_FILTER, AL_EFFECTSLOT_NULL, index, 0);
+		#endif
+		
+	}
+	
+	
 	void lime_al_source_pause (value source) {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (source);
@@ -864,7 +1232,7 @@ namespace lime {
 	
 	void lime_al_source_pausev (int n, value sources) {
 		
-		if (val_is_null (sources) == false) {
+		if (!val_is_null (sources)) {
 			
 			int size = val_array_size (sources);
 			ALuint* data = new ALuint[size];
@@ -879,6 +1247,7 @@ namespace lime {
 			delete[] data;
 			
 		}
+		
 	}
 	
 	
@@ -892,7 +1261,7 @@ namespace lime {
 	
 	void lime_al_source_playv (int n, value sources) {
 		
-		if (val_is_null (sources) == false) {
+		if (!val_is_null (sources)) {
 			
 			int size = val_array_size (sources);
 			ALuint* data = new ALuint[size];
@@ -915,7 +1284,7 @@ namespace lime {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (source);
 		
-		if (val_is_null (buffers) == false) {
+		if (!val_is_null (buffers)) {
 			
 			int size = val_array_size (buffers);
 			ALuint* data = new ALuint[size];
@@ -944,7 +1313,7 @@ namespace lime {
 	
 	void lime_al_source_rewindv (int n, value sources) {
 		
-		if (val_is_null (sources) == false) {
+		if (!val_is_null (sources)) {
 			
 			int size = val_array_size (sources);
 			ALuint* data = new ALuint[size];
@@ -973,7 +1342,7 @@ namespace lime {
 	
 	void lime_al_source_stopv (int n, value sources) {
 		
-		if (val_is_null (sources) == false) {
+		if (!val_is_null (sources)) {
 			
 			int size = val_array_size (sources);
 			ALuint* data = new ALuint[size];
@@ -1035,10 +1404,26 @@ namespace lime {
 	}
 	
 	
-	void lime_al_source3i (value source, int param, int value1, int value2, int value3) {
+	void lime_al_source3i (value source, int param, value value1, int value2, int value3) {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (source);
-		alSource3i (id, param, value1, value2, value3);
+		ALuint data1;
+		
+		#ifdef LIME_OPENALSOFT
+		if (param == AL_AUXILIARY_SEND_FILTER) {
+			
+			data1 = (ALuint)(uintptr_t)val_data (value1);
+			
+		} else {
+			
+			data1 = val_int (value1);
+			
+		}
+		#else
+		data1 = val_int (value1);
+		#endif
+		
+		alSource3i (id, param, data1, value2, value3);
 		
 	}
 	
@@ -1055,7 +1440,7 @@ namespace lime {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (source);
 		
-		if (val_is_null (values) == false) {
+		if (!val_is_null (values)) {
 			
 			int size = val_array_size (values);
 			ALfloat *data = new ALfloat[size];
@@ -1079,6 +1464,17 @@ namespace lime {
 		ALuint id = (ALuint)(uintptr_t)val_data (source);
 		ALuint data;
 		
+		#ifdef LIME_OPENALSOFT
+		if (param == AL_BUFFER || param == AL_DIRECT_FILTER) {
+			
+			data = (ALuint)(uintptr_t)val_data (val);
+			
+		} else {
+			
+			data = val_int (val);
+			
+		}
+		#else
 		if (param == AL_BUFFER) {
 			
 			data = (ALuint)(uintptr_t)val_data (val);
@@ -1088,6 +1484,7 @@ namespace lime {
 			data = val_int (val);
 			
 		}
+		#endif
 		
 		alSourcei (id, param, data);
 		
@@ -1098,7 +1495,7 @@ namespace lime {
 		
 		ALuint id = (ALuint)(uintptr_t)val_data (source);
 		
-		if (val_is_null (values) == false) {
+		if (!val_is_null (values)) {
 			
 			int size = val_array_size (values);
 			ALint* data = new ALint[size];
@@ -1136,10 +1533,9 @@ namespace lime {
 	value lime_alc_create_context (value device, value attrlist) {
 		
 		ALCdevice* alcDevice = (ALCdevice*)val_data (device);
-		
 		ALCint* list = NULL;
 		
-		if (val_is_null (attrlist) == false) {
+		if (!val_is_null (attrlist)) {
 			
 			int size = val_array_size (attrlist);
 			list = new ALCint[size];
@@ -1274,7 +1670,7 @@ namespace lime {
 	
 	
 	void lime_alc_pause_device (value device) {
-		
+			
 		#ifdef LIME_OPENALSOFT
 		ALCdevice* alcDevice = (ALCdevice*)val_data (device);
 		alcDevicePauseSOFT (alcDevice);
@@ -1309,6 +1705,12 @@ namespace lime {
 	}
 	
 	
+	
+	
+	DEFINE_PRIME3v (lime_al_auxf);
+	DEFINE_PRIME3v (lime_al_auxfv);
+	DEFINE_PRIME3v (lime_al_auxi);
+	DEFINE_PRIME3v (lime_al_auxiv);
 	DEFINE_PRIME5v (lime_al_buffer_data);
 	DEFINE_PRIME5v (lime_al_buffer3f);
 	DEFINE_PRIME5v (lime_al_buffer3i);
@@ -1316,17 +1718,28 @@ namespace lime {
 	DEFINE_PRIME3v (lime_al_bufferfv);
 	DEFINE_PRIME3v (lime_al_bufferi);
 	DEFINE_PRIME3v (lime_al_bufferiv);
+	DEFINE_PRIME1v (lime_al_delete_auxiliary_effect_slot);
 	DEFINE_PRIME1v (lime_al_delete_buffer);
 	DEFINE_PRIME2v (lime_al_delete_buffers);
+	DEFINE_PRIME1v (lime_al_delete_filter);
 	DEFINE_PRIME1v (lime_al_delete_source);
 	DEFINE_PRIME2v (lime_al_delete_sources);
 	DEFINE_PRIME1v (lime_al_disable);
 	DEFINE_PRIME1v (lime_al_distance_model);
 	DEFINE_PRIME1v (lime_al_doppler_factor);
 	DEFINE_PRIME1v (lime_al_doppler_velocity);
+	DEFINE_PRIME3v (lime_al_effectf);
+	DEFINE_PRIME3v (lime_al_effectfv);
+	DEFINE_PRIME3v (lime_al_effecti);
+	DEFINE_PRIME3v (lime_al_effectiv);
 	DEFINE_PRIME1v (lime_al_enable);
+	DEFINE_PRIME3v (lime_al_filteri);
+	DEFINE_PRIME3v (lime_al_filterf);
+	DEFINE_PRIME0 (lime_al_gen_aux);
 	DEFINE_PRIME0 (lime_al_gen_buffer);
 	DEFINE_PRIME1 (lime_al_gen_buffers);
+	DEFINE_PRIME0 (lime_al_gen_effect);
+	DEFINE_PRIME0 (lime_al_gen_filter);
 	DEFINE_PRIME0 (lime_al_gen_source);
 	DEFINE_PRIME1 (lime_al_gen_sources);
 	DEFINE_PRIME1 (lime_al_get_boolean);
@@ -1341,6 +1754,7 @@ namespace lime {
 	DEFINE_PRIME2 (lime_al_get_doublev);
 	DEFINE_PRIME1 (lime_al_get_enum_value);
 	DEFINE_PRIME0 (lime_al_get_error);
+	DEFINE_PRIME2 (lime_al_get_filteri);
 	DEFINE_PRIME1 (lime_al_get_float);
 	DEFINE_PRIME2 (lime_al_get_floatv);
 	DEFINE_PRIME1 (lime_al_get_integer);
@@ -1359,9 +1773,12 @@ namespace lime {
 	DEFINE_PRIME2 (lime_al_get_sourcei);
 	DEFINE_PRIME3 (lime_al_get_sourceiv);
 	DEFINE_PRIME1 (lime_al_get_string);
+	DEFINE_PRIME1 (lime_al_is_aux);
 	DEFINE_PRIME1 (lime_al_is_buffer);
+	DEFINE_PRIME1 (lime_al_is_effect);
 	DEFINE_PRIME1 (lime_al_is_enabled);
 	DEFINE_PRIME1 (lime_al_is_extension_present);
+	DEFINE_PRIME1 (lime_al_is_filter);
 	DEFINE_PRIME1 (lime_al_is_source);
 	DEFINE_PRIME4v (lime_al_listener3f);
 	DEFINE_PRIME4v (lime_al_listener3i);
@@ -1369,6 +1786,8 @@ namespace lime {
 	DEFINE_PRIME2v (lime_al_listenerfv);
 	DEFINE_PRIME2v (lime_al_listeneri);
 	DEFINE_PRIME2v (lime_al_listeneriv);
+	DEFINE_PRIME1v (lime_al_remove_direct_filter);
+	DEFINE_PRIME2v (lime_al_remove_send);
 	DEFINE_PRIME1v (lime_al_source_pause);
 	DEFINE_PRIME2v (lime_al_source_pausev);
 	DEFINE_PRIME1v (lime_al_source_play);
@@ -1400,7 +1819,6 @@ namespace lime {
 	DEFINE_PRIME1v (lime_alc_process_context);
 	DEFINE_PRIME1v (lime_alc_resume_device);
 	DEFINE_PRIME1v (lime_alc_suspend_context);
-	
 	
 }
 

@@ -11,6 +11,7 @@ import lime.tools.helpers.LogHelper;
 import lime.tools.helpers.ModuleHelper;
 import lime.tools.helpers.PathHelper;
 import lime.tools.helpers.ProcessHelper;
+import lime.tools.helpers.WatchHelper;
 import lime.project.AssetType;
 import lime.project.HXProject;
 import lime.project.Icon;
@@ -22,6 +23,7 @@ import sys.FileSystem;
 class HTML5Platform extends PlatformTarget {
 	
 	
+	private var dependencyPath:String;
 	private var outputFile:String;
 	
 	
@@ -100,6 +102,13 @@ class HTML5Platform extends PlatformTarget {
 	
 	public override function display ():Void {
 		
+		Sys.println (getDisplayHXML ());
+		
+	}
+	
+	
+	private function getDisplayHXML ():String {
+		
 		var hxml = PathHelper.findTemplate (project.templatePaths, "html5/hxml/" + buildType + ".hxml");
 		
 		var context = project.templateContext;
@@ -108,8 +117,7 @@ class HTML5Platform extends PlatformTarget {
 		
 		var template = new Template (File.getContent (hxml));
 		
-		Sys.println (template.execute (context));
-		Sys.println ("-D display");
+		return template.execute (context) + "\n-D display";
 		
 	}
 	
@@ -117,6 +125,7 @@ class HTML5Platform extends PlatformTarget {
 	private function initialize (command:String, project:HXProject):Void {
 		
 		targetDirectory = PathHelper.combine (project.app.path, project.config.getString ("html5.output-directory", "html5"));
+		dependencyPath = project.config.getString ("html5.dependency-path", "lib");
 		outputFile = targetDirectory + "/bin/" + project.app.file + ".js";
 		
 	}
@@ -278,8 +287,8 @@ class HTML5Platform extends PlatformTarget {
 				
 				var name = Path.withoutDirectory (dependency.path);
 				
-				context.linkedLibraries.push ("./lib/" + name);
-				FileHelper.copyIfNewer (dependency.path, PathHelper.combine (destination, PathHelper.combine ("lib", name)));
+				context.linkedLibraries.push ("./" + dependencyPath + "/" + name);
+				FileHelper.copyIfNewer (dependency.path, PathHelper.combine (destination, PathHelper.combine (dependencyPath, name)));
 				
 			}
 			
@@ -389,6 +398,17 @@ class HTML5Platform extends PlatformTarget {
 			}
 			
 		}
+		
+	}
+	
+	
+	public override function watch ():Void {
+		
+		// TODO: Use a custom live reload HTTP server for test/run instead
+		
+		var dirs = WatchHelper.processHXML (project, getDisplayHXML ());
+		var command = WatchHelper.getCurrentCommand ();
+		WatchHelper.watch (project, command, dirs);
 		
 	}
 	
