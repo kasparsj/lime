@@ -7,14 +7,14 @@ import haxe.io.Input;
 import haxe.io.Output;
 import haxe.io.Path;
 import haxe.zip.Reader;
-import lime.tools.helpers.PathHelper;
-import lime.tools.helpers.ProcessHelper;
+import hxp.helpers.PathHelper;
+import hxp.helpers.ProcessHelper;
+import hxp.project.HXProject;
 import sys.io.File;
 import sys.io.Process;
 import sys.FileSystem;
 import neko.Lib;
 import neko.zip.Compress;
-import lime.project.HXProject;
 
 
 class JavaExternGenerator
@@ -766,7 +766,7 @@ class JavaExternGenerator
 			java_out.close();
 			
 			PathHelper.mkdir("compiled");
-			var nme_path = getHaxelib("openfl") + "/backends/native/templates/android/template/src";
+			var nme_path = getHaxelib("openfl") + "/__backends/native/templates/android/template/src";
 			ProcessHelper.runCommand ("", "javac", [ "-classpath", "\"classes/android.jar\";\"" + javaPath.substr (0, javaPath.length -1) + "\"", "-sourcepath", nme_path, "-d", "compiled", "stubs/" + java_name ], true, true, true);
 			
 			//Sys.setCwd("compiled");

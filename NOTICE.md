@@ -2,10 +2,7 @@ Notices
 =======
 
 ### Lime
-Copyright (c) 2013-2017 Joshua Granick and other Lime contributors
-
-This product bundles axTLS 2.1.4, which is available under a
-"BSD" license. For details, see [project/lib/axtls/](project/lib).
+Copyright (c) 2013-2018 Joshua Granick and other Lime contributors
 
 This product bundles cairo 1.15.2, which is available under an
 "MPL 1.1" license. For details, see [project/lib/cairo/](project/lib).
@@ -16,7 +13,7 @@ This product bundles libcurl 7.56.1, which is available under an
 This product bundles efsw, which is available under an
 "MIT" license. For details, see [project/lib/efsw/](project/lib).
 
-This product bundles freetype 2.7.1, which is available under an
+This product bundles freetype 2.9.1, which is available under an
 "FTL" (BSD-style) license. For details, see [project/lib/freetype/](project/lib).
 
 This product bundles harfbuzz 1.4.6, which is available under an
@@ -93,7 +90,7 @@ _The following are not embedded in Lime applications directly, but are used
 as dependencies for web-based builds. Their licensing does not affect products
 created with Lime._
 
-This product bundles howler.js 2.0.5, which is available under an
+This product bundles howler.js 2.0.9, which is available under an
 "MIT" license. For details, see [dependencies/howler.min.js](dependencies/howler.min.js).
 
 This product bundles FileSaver.js 1.3.3, which is available under an

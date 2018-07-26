@@ -4,7 +4,8 @@
 	"license": "MIT",
 	"tags": [],
 	"description": "A foundational Haxe framework for cross-platform development",
-	"version": "6.0.1",
-	"releasenote": "Minor installation fix",
-	"contributors": [ "singmajesty" ]
+	"version": "7.0.0",
+	"releasenote": "",
+	"contributors": [ "singmajesty" ],
+	"classPath": "src"
 }
