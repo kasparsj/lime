@@ -1,24 +1,25 @@
 package;
 
 
-import haxe.io.Path;
+import hxp.Path;
 import haxe.Json;
 import haxe.Template;
-import hxp.helpers.AssetHelper;
-import hxp.helpers.DeploymentHelper;
-import hxp.helpers.FileHelper;
-import hxp.helpers.FlashHelper;
-import hxp.helpers.HTML5Helper;
-import hxp.helpers.LogHelper;
-import hxp.helpers.PathHelper;
-import hxp.helpers.PlatformHelper;
-import hxp.helpers.ProcessHelper;
-import hxp.helpers.WatchHelper;
-import hxp.project.AssetType;
-import hxp.project.Haxelib;
-import hxp.project.HXProject;
-import hxp.project.Platform;
-import hxp.project.PlatformTarget;
+import lime.tools.AssetHelper;
+import lime.tools.AssetType;
+import lime.tools.DeploymentHelper;
+import lime.tools.ProjectHelper;
+import hxp.System;
+import lime.tools.FlashHelper;
+import hxp.Haxelib;
+import lime.tools.HTML5Helper;
+import hxp.Log;
+import hxp.Path;
+import lime.tools.Platform;
+import hxp.System;
+import lime.tools.PlatformTarget;
+import hxp.System;
+import lime.tools.HXProject;
+import hxp.System;
 import sys.io.File;
 import sys.FileSystem;
 
@@ -38,14 +39,14 @@ class FlashPlatform extends PlatformTarget {
 
 		super (command, _project, targetFlags);
 
-		targetDirectory = PathHelper.combine (project.app.path, project.config.getString ("flash.output-directory", "flash"));
+		targetDirectory = Path.combine (project.app.path, project.config.getString ("flash.output-directory", "flash"));
 
 	}
 
 
 	public override function build ():Void {
 
-		ProcessHelper.runCommand ("", "haxe", [ targetDirectory + "/haxe/" + buildType + ".hxml" ]);
+		System.runCommand ("", "haxe", [ targetDirectory + "/haxe/" + buildType + ".hxml" ]);
 
 	}
 
@@ -56,7 +57,7 @@ class FlashPlatform extends PlatformTarget {
 
 		if (FileSystem.exists (targetPath)) {
 
-			PathHelper.removeDirectory (targetPath);
+			System.removeDirectory (targetPath);
 
 		}
 
@@ -87,7 +88,7 @@ class FlashPlatform extends PlatformTarget {
 
 		}
 
-		if (LogHelper.verbose) {
+		if (Log.verbose) {
 
 			project.haxedefs.set ("verbose", 1);
 
@@ -120,7 +121,7 @@ class FlashPlatform extends PlatformTarget {
 
 	private function getDisplayHXML ():String {
 
-		var hxml = PathHelper.findTemplate (project.templatePaths, "flash/hxml/" + buildType + ".hxml");
+		var hxml = System.findTemplate (project.templatePaths, "flash/hxml/" + buildType + ".hxml");
 
 		var context = project.templateContext;
 		context.WIN_FLASHBACKGROUND = StringTools.hex (project.window.background, 6);
@@ -128,7 +129,7 @@ class FlashPlatform extends PlatformTarget {
 
 		var template = new Template (File.getContent (hxml));
 
-		return template.execute (context) + "\n-D display";
+		return template.execute (context);
 
 	}
 
@@ -144,7 +145,7 @@ class FlashPlatform extends PlatformTarget {
 
 		if (project.app.url != null && project.app.url != "") {
 
-			ProcessHelper.openURL (project.app.url);
+			System.openURL (project.app.url);
 
 		} else {
 
@@ -194,7 +195,7 @@ class FlashPlatform extends PlatformTarget {
 		AssetHelper.processLibraries (project, targetDirectory);
 
 		var destination = targetDirectory + "/bin/";
-		PathHelper.mkdir (destination);
+		System.mkdir (destination);
 
 		// project = project.clone ();
 
@@ -203,14 +204,14 @@ class FlashPlatform extends PlatformTarget {
 		var context = generateContext ();
 		context.OUTPUT_DIR = targetDirectory;
 
-		FileHelper.recursiveSmartCopyTemplate (project, "haxe", targetDirectory + "/haxe", context);
-		FileHelper.recursiveSmartCopyTemplate (project, "flash/hxml", targetDirectory + "/haxe", context);
-		FileHelper.recursiveSmartCopyTemplate (project, "flash/haxe", targetDirectory + "/haxe", context, true, false);
+		ProjectHelper.recursiveSmartCopyTemplate (project, "haxe", targetDirectory + "/haxe", context);
+		ProjectHelper.recursiveSmartCopyTemplate (project, "flash/hxml", targetDirectory + "/haxe", context);
+		ProjectHelper.recursiveSmartCopyTemplate (project, "flash/haxe", targetDirectory + "/haxe", context, true, false);
 
 		if (project.targetFlags.exists ("web") || project.app.url != "") {
 
-			PathHelper.mkdir (destination);
-			FileHelper.recursiveSmartCopyTemplate (project, "flash/templates/web", destination, generateContext ());
+			System.mkdir (destination);
+			ProjectHelper.recursiveSmartCopyTemplate (project, "flash/templates/web", destination, generateContext ());
 
 		}
 
@@ -252,10 +253,10 @@ class FlashPlatform extends PlatformTarget {
 
 			if (asset.type == AssetType.TEMPLATE || asset.embed == false /*|| !usesLime*/) {
 
-				var path = PathHelper.combine (destination, asset.targetPath);
+				var path = Path.combine (destination, asset.targetPath);
 
-				PathHelper.mkdir (Path.directory (path));
-				FileHelper.copyAsset (asset, path, context);
+				System.mkdir (Path.directory (path));
+				AssetHelper.copyAsset (asset, path, context);
 
 			}
 
@@ -270,7 +271,7 @@ class FlashPlatform extends PlatformTarget {
 
 		if (icon != "") {
 
-			FileHelper.copyIfNewer (icon, targetPath);
+			System.copyIfNewer (icon, targetPath);
 
 		} else {
 
@@ -283,9 +284,9 @@ class FlashPlatform extends PlatformTarget {
 
 	public override function watch ():Void {
 
-		var dirs = WatchHelper.processHXML (project, getDisplayHXML ());
-		var command = WatchHelper.getCurrentCommand ();
-		WatchHelper.watch (project, command, dirs);
+		var dirs = []; // WatchHelper.processHXML (getDisplayHXML (), project.app.path);
+		var command = ProjectHelper.getCurrentCommand ();
+		System.watch (command, dirs);
 
 	}
 

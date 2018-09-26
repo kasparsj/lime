@@ -1,20 +1,21 @@
 package;
 
 
-import haxe.io.Path;
+import hxp.Path;
 import haxe.Template;
-import hxp.helpers.AssetHelper;
-import hxp.helpers.CPPHelper;
-import hxp.helpers.DeploymentHelper;
-import hxp.helpers.FileHelper;
-import hxp.helpers.IconHelper;
-import hxp.helpers.PathHelper;
-import hxp.helpers.ProcessHelper;
-import hxp.helpers.TizenHelper;
-import hxp.project.AssetType;
-import hxp.project.HXProject;
-import hxp.project.Icon;
-import hxp.project.PlatformTarget;
+import lime.tools.AssetHelper;
+import lime.tools.AssetType;
+import lime.tools.CPPHelper;
+import lime.tools.DeploymentHelper;
+import hxp.System;
+import lime.tools.Icon;
+import lime.tools.IconHelper;
+import hxp.Path;
+import lime.tools.PlatformTarget;
+import hxp.System;
+import lime.tools.HXProject;
+import lime.tools.ProjectHelper;
+import hxp.TizenHelper;
 import sys.io.File;
 import sys.FileSystem;
 
@@ -29,7 +30,7 @@ class TizenPlatform extends PlatformTarget {
 
 		super (command, _project, targetFlags);
 
-		targetDirectory = PathHelper.combine (project.app.path, project.config.getString ("tizen.output-directory", "tizen"));
+		targetDirectory = Path.combine (project.app.path, project.config.getString ("tizen.output-directory", "tizen"));
 
 	}
 
@@ -48,13 +49,13 @@ class TizenPlatform extends PlatformTarget {
 
 		for (ndll in project.ndlls) {
 
-			FileHelper.copyLibrary (project, ndll, "Tizen", "", arch + ".so", destination + "lib/", project.debug, ".so");
+			ProjectHelper.copyLibrary (project, ndll, "Tizen", "", arch + ".so", destination + "lib/", project.debug, ".so");
 
 		}
 
 		var hxml = targetDirectory + "/haxe/" + buildType + ".hxml";
 
-		ProcessHelper.runCommand ("", "haxe", [ hxml, "-D", "tizen" ] );
+		System.runCommand ("", "haxe", [ hxml, "-D", "tizen" ] );
 
 		if (noOutput) return;
 
@@ -67,7 +68,7 @@ class TizenPlatform extends PlatformTarget {
 		}
 
 		CPPHelper.compile (project, targetDirectory + "/obj", args);
-		FileHelper.copyIfNewer (targetDirectory + "/obj/ApplicationMain" + (project.debug ? "-debug" : "") + ".exe", targetDirectory + "/bin/CommandLineBuild/" + project.app.file + ".exe");
+		System.copyIfNewer (targetDirectory + "/obj/ApplicationMain" + (project.debug ? "-debug" : "") + ".exe", targetDirectory + "/bin/CommandLineBuild/" + project.app.file + ".exe");
 		TizenHelper.createPackage (project, targetDirectory + "/bin/CommandLineBuild", "");
 
 	}
@@ -77,7 +78,7 @@ class TizenPlatform extends PlatformTarget {
 
 		if (FileSystem.exists (targetDirectory)) {
 
-			PathHelper.removeDirectory (targetDirectory);
+			System.removeDirectory (targetDirectory);
 
 		}
 
@@ -93,7 +94,7 @@ class TizenPlatform extends PlatformTarget {
 
 	public override function display ():Void {
 
-		var hxml = PathHelper.findTemplate (project.templatePaths, "tizen/hxml/" + buildType + ".hxml");
+		var hxml = System.findTemplate (project.templatePaths, "tizen/hxml/" + buildType + ".hxml");
 
 		var context = project.templateContext;
 		context.CPP_DIR = targetDirectory + "/obj";
@@ -102,7 +103,6 @@ class TizenPlatform extends PlatformTarget {
 		var template = new Template (File.getContent (hxml));
 
 		Sys.println (template.execute (context));
-		Sys.println ("-D display");
 
 	}
 
@@ -147,9 +147,9 @@ class TizenPlatform extends PlatformTarget {
 
 			if (asset.embed && asset.sourcePath == "") {
 
-				var path = PathHelper.combine (targetDirectory + "/obj/tmp", asset.targetPath);
-				PathHelper.mkdir (Path.directory (path));
-				FileHelper.copyAsset (asset, path);
+				var path = Path.combine (targetDirectory + "/obj/tmp", asset.targetPath);
+				System.mkdir (Path.directory (path));
+				AssetHelper.copyAsset (asset, path);
 				asset.sourcePath = path;
 
 			}
@@ -157,7 +157,7 @@ class TizenPlatform extends PlatformTarget {
 		}
 
 		var destination = targetDirectory + "/bin/";
-		PathHelper.mkdir (destination);
+		System.mkdir (destination);
 
 		for (asset in project.assets) {
 
@@ -177,49 +177,49 @@ class TizenPlatform extends PlatformTarget {
 		context.APP_PACKAGE = TizenHelper.getUUID (project);
 		context.SIMULATOR = project.targetFlags.exists ("simulator");
 
-		PathHelper.mkdir (destination + "shared/res/screen-density-xhigh");
+		System.mkdir (destination + "shared/res/screen-density-xhigh");
 
 		var icons = project.icons;
 
 		if (icons.length == 0) {
 
-			icons = [ new Icon (PathHelper.findTemplate (project.templatePaths, "default/icon.svg")) ];
+			icons = [ new Icon (System.findTemplate (project.templatePaths, "default/icon.svg")) ];
 
 		}
 
-		if (IconHelper.createIcon (icons, 117, 117, PathHelper.combine (destination + "shared/res/screen-density-xhigh", "mainmenu.png"))) {
+		if (IconHelper.createIcon (icons, 117, 117, Path.combine (destination + "shared/res/screen-density-xhigh", "mainmenu.png"))) {
 
 			context.APP_ICON = "mainmenu.png";
 
 		}
 
-		FileHelper.recursiveSmartCopyTemplate (project, "tizen/template", destination, context);
-		FileHelper.recursiveSmartCopyTemplate (project, "haxe", targetDirectory + "/haxe", context);
-		FileHelper.recursiveSmartCopyTemplate (project, "tizen/hxml", targetDirectory + "/haxe", context);
+		ProjectHelper.recursiveSmartCopyTemplate (project, "tizen/template", destination, context);
+		ProjectHelper.recursiveSmartCopyTemplate (project, "haxe", targetDirectory + "/haxe", context);
+		ProjectHelper.recursiveSmartCopyTemplate (project, "tizen/hxml", targetDirectory + "/haxe", context);
 
 		for (asset in project.assets) {
 
-			var path = PathHelper.combine (destination + "res/", asset.targetPath);
+			var path = Path.combine (destination + "res/", asset.targetPath);
 
-			PathHelper.mkdir (Path.directory (path));
+			System.mkdir (Path.directory (path));
 
 			if (asset.type != AssetType.TEMPLATE) {
 
 				if (asset.targetPath == "/appinfo.json") {
 
-					FileHelper.copyAsset (asset, path, context);
+					AssetHelper.copyAsset (asset, path, context);
 
 				} else {
 
 					// going to root directory now, but should it be a forced "assets" folder later?
 
-					FileHelper.copyAssetIfNewer (asset, path);
+					AssetHelper.copyAssetIfNewer (asset, path);
 
 				}
 
 			} else {
 
-				FileHelper.copyAsset (asset, path, context);
+				AssetHelper.copyAsset (asset, path, context);
 
 			}
 

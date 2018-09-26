@@ -2,7 +2,7 @@ package lime.math;
 
 
 #if flash
-import flash.geom.Rectangle in FlashRectangle;
+import flash.geom.Rectangle as FlashRectangle;
 #end
 
 
@@ -10,6 +10,8 @@ import flash.geom.Rectangle in FlashRectangle;
 	The `Rectangle` class provides a simple object for storing
 	and manipulating a logical rectangle for calculations
 **/
+
+#if hl @:keep #end
 
 #if !lime_debug
 @:fileXml('tags="haxe,release"')

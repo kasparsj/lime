@@ -1,26 +1,28 @@
 package;
 
 
-import haxe.io.Path;
+import hxp.Path;
+import hxp.NDLL;
 import haxe.Template;
-import hxp.helpers.AssetHelper;
-import hxp.helpers.CPPHelper;
-import hxp.helpers.DeploymentHelper;
-import hxp.helpers.FileHelper;
-import hxp.helpers.JavaHelper;
-import hxp.helpers.LogHelper;
-import hxp.helpers.NekoHelper;
-import hxp.helpers.NodeJSHelper;
-import hxp.helpers.PathHelper;
-import hxp.helpers.PlatformHelper;
-import hxp.helpers.ProcessHelper;
-import hxp.helpers.WatchHelper;
-import hxp.project.AssetType;
-import hxp.project.Architecture;
-import hxp.project.Haxelib;
-import hxp.project.HXProject;
-import hxp.project.Platform;
-import hxp.project.PlatformTarget;
+import lime.tools.Architecture;
+import lime.tools.AssetHelper;
+import lime.tools.AssetType;
+import lime.tools.CPPHelper;
+import lime.tools.DeploymentHelper;
+import hxp.System;
+import hxp.Haxelib;
+import lime.tools.JavaHelper;
+import hxp.Log;
+import lime.tools.NekoHelper;
+import lime.tools.NodeJSHelper;
+import hxp.Path;
+import lime.tools.Platform;
+import hxp.System;
+import lime.tools.PlatformTarget;
+import hxp.System;
+import lime.tools.HXProject;
+import lime.tools.ProjectHelper;
+import hxp.System;
 import sys.io.File;
 import sys.io.Process;
 import sys.FileSystem;
@@ -61,13 +63,14 @@ class LinuxPlatform extends PlatformTarget {
 
 		}
 
-		if (project.targetFlags.exists ("neko") || project.target != PlatformHelper.hostPlatform) {
+		if (project.targetFlags.exists ("neko") || project.target != cast System.hostPlatform) {
 
 			targetType = "neko";
 
 		} else if (project.targetFlags.exists ("hl")) {
 
 			targetType = "hl";
+			is64 = false;
 
 		} else if (project.targetFlags.exists ("nodejs")) {
 
@@ -83,10 +86,10 @@ class LinuxPlatform extends PlatformTarget {
 
 		}
 
-		targetDirectory = PathHelper.combine (project.app.path, project.config.getString ("linux.output-directory", targetType == "cpp" ? "linux" : targetType));
+		targetDirectory = Path.combine (project.app.path, project.config.getString ("linux.output-directory", targetType == "cpp" ? "linux" : targetType));
 		targetDirectory = StringTools.replace (targetDirectory, "arch64", is64 ? "64" : "");
 		applicationDirectory = targetDirectory + "/bin/";
-		executablePath = PathHelper.combine (applicationDirectory, project.app.file);
+		executablePath = Path.combine (applicationDirectory, project.app.file);
 
 	}
 
@@ -95,7 +98,7 @@ class LinuxPlatform extends PlatformTarget {
 
 		var hxml = targetDirectory + "/haxe/" + buildType + ".hxml";
 
-		PathHelper.mkdir (targetDirectory);
+		System.mkdir (targetDirectory);
 
 		if (!project.targetFlags.exists ("static") || targetType != "cpp") {
 
@@ -105,11 +108,11 @@ class LinuxPlatform extends PlatformTarget {
 
 				if (isRaspberryPi) {
 
-					FileHelper.copyLibrary (project, ndll, "RPi", "", (ndll.haxelib != null && (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dso" : ".ndll", applicationDirectory, project.debug, targetSuffix);
+					ProjectHelper.copyLibrary (project, ndll, "RPi", "", (ndll.haxelib != null && (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dso" : ".ndll", applicationDirectory, project.debug, targetSuffix);
 
 				} else {
 
-					FileHelper.copyLibrary (project, ndll, "Linux" + (is64 ? "64" : ""), "", (ndll.haxelib != null && (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dso" : ".ndll", applicationDirectory, project.debug, targetSuffix);
+					ProjectHelper.copyLibrary (project, ndll, "Linux" + (is64 ? "64" : ""), "", (ndll.haxelib != null && (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dso" : ".ndll", applicationDirectory, project.debug, targetSuffix);
 
 				}
 
@@ -119,7 +122,7 @@ class LinuxPlatform extends PlatformTarget {
 
 		if (targetType == "neko") {
 
-			ProcessHelper.runCommand ("", "haxe", [ hxml ]);
+			System.runCommand ("", "haxe", [ hxml ]);
 
 			if (noOutput) return;
 
@@ -137,24 +140,24 @@ class LinuxPlatform extends PlatformTarget {
 
 		} else if (targetType == "hl") {
 
-			ProcessHelper.runCommand ("", "haxe", [ hxml ]);
+			System.runCommand ("", "haxe", [ hxml ]);
 
 			if (noOutput) return;
 
-			FileHelper.copyFile (targetDirectory + "/obj/ApplicationMain" + (project.debug ? "-Debug" : "") + ".hl", PathHelper.combine (applicationDirectory, project.app.file + ".hl"));
+			System.copyFile (targetDirectory + "/obj/ApplicationMain" + (project.debug ? "-Debug" : "") + ".hl", Path.combine (applicationDirectory, project.app.file + ".hl"));
 
 		} else if (targetType == "nodejs") {
 
-			ProcessHelper.runCommand ("", "haxe", [ hxml ]);
+			System.runCommand ("", "haxe", [ hxml ]);
 			//NekoHelper.createExecutable (project.templatePaths, "linux" + (is64 ? "64" : ""), targetDirectory + "/obj/ApplicationMain.n", executablePath);
 			//NekoHelper.copyLibraries (project.templatePaths, "linux" + (is64 ? "64" : ""), applicationDirectory);
 
 		} else if (targetType == "java") {
 
-			var libPath = PathHelper.combine (PathHelper.getHaxelib (new Haxelib ("lime")), "templates/java/lib/");
+			var libPath = Path.combine (Haxelib.getPath (new Haxelib ("lime")), "templates/java/lib/");
 
-			ProcessHelper.runCommand ("", "haxe", [ hxml, "-java-lib", libPath + "disruptor.jar", "-java-lib", libPath + "lwjgl.jar" ]);
-			//ProcessHelper.runCommand ("", "haxe", [ hxml ]);
+			System.runCommand ("", "haxe", [ hxml, "-java-lib", libPath + "disruptor.jar", "-java-lib", libPath + "lwjgl.jar" ]);
+			//System.runCommand ("", "haxe", [ hxml ]);
 
 			if (noOutput) return;
 
@@ -167,9 +170,9 @@ class LinuxPlatform extends PlatformTarget {
 
 			}
 
-			ProcessHelper.runCommand (targetDirectory + "/obj", "haxelib", [ "run", "hxjava", "hxjava_build.txt", "--haxe-version", haxeVersionString ]);
-			FileHelper.recursiveCopy (targetDirectory + "/obj/lib", PathHelper.combine (applicationDirectory, "lib"));
-			FileHelper.copyFile (targetDirectory + "/obj/ApplicationMain" + (project.debug ? "-Debug" : "") + ".jar", PathHelper.combine (applicationDirectory, project.app.file + ".jar"));
+			System.runCommand (targetDirectory + "/obj", "haxelib", [ "run", "hxjava", "hxjava_build.txt", "--haxe-version", haxeVersionString ]);
+			System.recursiveCopy (targetDirectory + "/obj/lib", Path.combine (applicationDirectory, "lib"));
+			System.copyFile (targetDirectory + "/obj/ApplicationMain" + (project.debug ? "-Debug" : "") + ".jar", Path.combine (applicationDirectory, project.app.file + ".jar"));
 			JavaHelper.copyLibraries (project.templatePaths, "Linux" + (is64 ? "64" : ""), applicationDirectory);
 
 		} else {
@@ -193,32 +196,32 @@ class LinuxPlatform extends PlatformTarget {
 
 			if (!project.targetFlags.exists ("static")) {
 
-				ProcessHelper.runCommand ("", "haxe", haxeArgs);
+				System.runCommand ("", "haxe", haxeArgs);
 
 				if (noOutput) return;
 
 				CPPHelper.compile (project, targetDirectory + "/obj", flags);
 
-				FileHelper.copyFile (targetDirectory + "/obj/ApplicationMain" + (project.debug ? "-debug" : ""), executablePath);
+				System.copyFile (targetDirectory + "/obj/ApplicationMain" + (project.debug ? "-debug" : ""), executablePath);
 
 			} else {
 
-				ProcessHelper.runCommand ("", "haxe", haxeArgs.concat ([ "-D", "static_link" ]));
+				System.runCommand ("", "haxe", haxeArgs.concat ([ "-D", "static_link" ]));
 
 				if (noOutput) return;
 
 				CPPHelper.compile (project, targetDirectory + "/obj", flags.concat ([ "-Dstatic_link" ]));
 				CPPHelper.compile (project, targetDirectory + "/obj", flags, "BuildMain.xml");
 
-				FileHelper.copyFile (targetDirectory + "/obj/Main" + (project.debug ? "-debug" : ""), executablePath);
+				System.copyFile (targetDirectory + "/obj/Main" + (project.debug ? "-debug" : ""), executablePath);
 
 			}
 
 		}
 
-		if (PlatformHelper.hostPlatform != Platform.WINDOWS && (targetType != "nodejs" && targetType != "java")) {
+		if (System.hostPlatform != WINDOWS && (targetType != "nodejs" && targetType != "java")) {
 
-			ProcessHelper.runCommand ("", "chmod", [ "755", executablePath ]);
+			System.runCommand ("", "chmod", [ "755", executablePath ]);
 
 		}
 
@@ -229,7 +232,7 @@ class LinuxPlatform extends PlatformTarget {
 
 		if (FileSystem.exists (targetDirectory)) {
 
-			PathHelper.removeDirectory (targetDirectory);
+			System.removeDirectory (targetDirectory);
 
 		}
 
@@ -276,13 +279,13 @@ class LinuxPlatform extends PlatformTarget {
 
 	private function getDisplayHXML ():String {
 
-		var hxml = PathHelper.findTemplate (project.templatePaths, targetType + "/hxml/" + buildType + ".hxml");
+		var hxml = System.findTemplate (project.templatePaths, targetType + "/hxml/" + buildType + ".hxml");
 		var template = new Template (File.getContent (hxml));
 
 		var context = generateContext ();
 		context.OUTPUT_DIR = targetDirectory;
 
-		return template.execute (context) + "\n-D display";
+		return template.execute (context);
 
 	}
 
@@ -297,13 +300,13 @@ class LinuxPlatform extends PlatformTarget {
 
 		} else {
 
-			if (!targetFlags.exists ("32") && PlatformHelper.hostArchitecture == X64) {
+			if (!targetFlags.exists ("32") && System.hostArchitecture == X64) {
 
 				commands.push ([ "-Dlinux", "-DHXCPP_M64" ]);
 
 			}
 
-			if (!targetFlags.exists ("64") && (command == "rebuild" || PlatformHelper.hostArchitecture == Architecture.X86)) {
+			if (!targetFlags.exists ("64") && (command == "rebuild" || System.hostArchitecture == X86)) {
 
 				commands.push ([ "-Dlinux", "-DHXCPP_M32" ]);
 
@@ -320,7 +323,7 @@ class LinuxPlatform extends PlatformTarget {
 
 		var arguments = additionalArguments.copy ();
 
-		if (LogHelper.verbose) {
+		if (Log.verbose) {
 
 			arguments.push ("-verbose");
 
@@ -328,7 +331,7 @@ class LinuxPlatform extends PlatformTarget {
 
 		if (targetType == "hl") {
 
-			ProcessHelper.runCommand (applicationDirectory, "hl", [ project.app.file + ".hl" ].concat (arguments));
+			System.runCommand (applicationDirectory, "hl", [ project.app.file + ".hl" ].concat (arguments));
 
 		} else if (targetType == "nodejs") {
 
@@ -336,12 +339,12 @@ class LinuxPlatform extends PlatformTarget {
 
 		} else if (targetType == "java") {
 
-			ProcessHelper.runCommand (applicationDirectory, "java", [ "-jar", project.app.file + ".jar" ].concat (arguments));
+			System.runCommand (applicationDirectory, "java", [ "-jar", project.app.file + ".jar" ].concat (arguments));
 
-		} else if (project.target == PlatformHelper.hostPlatform) {
+		} else if (project.target == cast System.hostPlatform) {
 
 			arguments = arguments.concat ([ "-livereload" ]);
-			ProcessHelper.runCommand (applicationDirectory, "./" + Path.withoutDirectory (executablePath), arguments);
+			System.runCommand (applicationDirectory, "./" + Path.withoutDirectory (executablePath), arguments);
 
 		}
 
@@ -359,9 +362,9 @@ class LinuxPlatform extends PlatformTarget {
 
 			if (asset.embed && asset.sourcePath == "") {
 
-				var path = PathHelper.combine (targetDirectory + "/obj/tmp", asset.targetPath);
-				PathHelper.mkdir (Path.directory (path));
-				FileHelper.copyAsset (asset, path);
+				var path = Path.combine (targetDirectory + "/obj/tmp", asset.targetPath);
+				System.mkdir (Path.directory (path));
+				AssetHelper.copyAsset (asset, path);
 				asset.sourcePath = path;
 
 			}
@@ -387,11 +390,11 @@ class LinuxPlatform extends PlatformTarget {
 
 					if (isRaspberryPi) {
 
-						context.ndlls[i].path = PathHelper.getLibraryPath (ndll, "RPi", "lib", ".a", project.debug);
+						context.ndlls[i].path = NDLL.getLibraryPath (ndll, "RPi", "lib", ".a", project.debug);
 
 					} else {
 
-						context.ndlls[i].path = PathHelper.getLibraryPath (ndll, "Linux" + (is64 ? "64" : ""), "lib", ".a", project.debug);
+						context.ndlls[i].path = NDLL.getLibraryPath (ndll, "Linux" + (is64 ? "64" : ""), "lib", ".a", project.debug);
 
 					}
 
@@ -401,38 +404,38 @@ class LinuxPlatform extends PlatformTarget {
 
 		}
 
-		PathHelper.mkdir (targetDirectory);
-		PathHelper.mkdir (targetDirectory + "/obj");
-		PathHelper.mkdir (targetDirectory + "/haxe");
-		PathHelper.mkdir (applicationDirectory);
+		System.mkdir (targetDirectory);
+		System.mkdir (targetDirectory + "/obj");
+		System.mkdir (targetDirectory + "/haxe");
+		System.mkdir (applicationDirectory);
 
 		//SWFHelper.generateSWFClasses (project, targetDirectory + "/haxe");
 
-		FileHelper.recursiveSmartCopyTemplate (project, "haxe", targetDirectory + "/haxe", context);
-		FileHelper.recursiveSmartCopyTemplate (project, targetType + "/hxml", targetDirectory + "/haxe", context);
+		ProjectHelper.recursiveSmartCopyTemplate (project, "haxe", targetDirectory + "/haxe", context);
+		ProjectHelper.recursiveSmartCopyTemplate (project, targetType + "/hxml", targetDirectory + "/haxe", context);
 
 		if (targetType == "cpp" && project.targetFlags.exists ("static")) {
 
-			FileHelper.recursiveSmartCopyTemplate (project, "cpp/static", targetDirectory + "/obj", context);
+			ProjectHelper.recursiveSmartCopyTemplate (project, "cpp/static", targetDirectory + "/obj", context);
 
 		}
 
-		//context.HAS_ICON = IconHelper.createIcon (project.icons, 256, 256, PathHelper.combine (applicationDirectory, "icon.png"));
+		//context.HAS_ICON = IconHelper.createIcon (project.icons, 256, 256, Path.combine (applicationDirectory, "icon.png"));
 		for (asset in project.assets) {
 
-			var path = PathHelper.combine (applicationDirectory, asset.targetPath);
+			var path = Path.combine (applicationDirectory, asset.targetPath);
 
 			if (asset.embed != true) {
 
 				if (asset.type != AssetType.TEMPLATE) {
 
-					PathHelper.mkdir (Path.directory (path));
-					FileHelper.copyAssetIfNewer (asset, path);
+					System.mkdir (Path.directory (path));
+					AssetHelper.copyAssetIfNewer (asset, path);
 
 				} else {
 
-					PathHelper.mkdir (Path.directory (path));
-					FileHelper.copyAsset (asset, path, context);
+					System.mkdir (Path.directory (path));
+					AssetHelper.copyAsset (asset, path, context);
 
 				}
 
@@ -445,9 +448,9 @@ class LinuxPlatform extends PlatformTarget {
 
 	public override function watch ():Void {
 
-		var dirs = WatchHelper.processHXML (project, getDisplayHXML ());
-		var command = WatchHelper.getCurrentCommand ();
-		WatchHelper.watch (project, command, dirs);
+		var dirs = []; // WatchHelper.processHXML (getDisplayHXML (), project.app.path);
+		var command = ProjectHelper.getCurrentCommand ();
+		System.watch (command, dirs);
 
 	}
 
