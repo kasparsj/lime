@@ -1,3 +1,109 @@
+7.5.0 (05/14/2019)
+------------------
+
+* Update version
+
+
+7.4.0 (05/14/2019)
+------------------
+
+* Renamed the "ndll" folder to "lib"
+* Updated SDL to latest development version
+* Updated the minimum target Android API from 14 to 16
+* Added support for CMYK JPEG decoding on native platforms
+* Added an `-npm` option for HTML5 to use Webpack
+* Added "hashlink" as an alias for the HL target
+* Improved the Zlib default compression level
+* Improved support for WinRT applications
+* Improved the internal blur implementation
+* Improved support for native joystick connection/disconnection
+* Improved the output HTML5 script wrapper with better Haxe 3.2 support
+* Fixed the values in `lime.ui.MouseButton` to match Lime's historic values (zero based)
+* Fixed issues effecting proper `Image` pixel-level APIs when targeting HL
+* Fixed a missing button value when dispatching HL mouse events
+
+
+7.3.0 (04/01/2019)
+------------------
+
+* Updated support for Haxe 4 dev versions
+* Updated SDL to 2.0.9
+* Updated howler.js to 2.1.1
+* Added initial display options to improve debugging with VS Code
+* Added initial HashLink 1.9 support (requires Haxe 4 dev)
+* Added initial support for embedding HTML5 projects in unique isolated JS closures
+* Added support for appending dependency JS scripts to the application file
+* Added initial support for haptic feedback on HTML5
+* Improved `lime display` when `lime build` has not been called
+* Improved support for WinRT native builds
+* Improved the behavior of `URLRequest` to re-use `Bytes` when writing
+* Improved the performance of `URLRequest` on native platforms
+* Improved `window.onDropFile` with an initial workaround for HTML5 support
+* Moved internal code style to use the Haxe "formatter" library for consistency
+* Fixed possible incorrect names in generated package.json for Electron output
+* Fixed support for building for Android using ARMv5 or ARMv6 only
+* Fixed the event types in `lime.system.ThreadPool`
+* Fixed a possible rounding error when calculating application update times
+* Fixed cases where HTML5 canvas was not properly enabling image smoothing
+* Fixed the behavior of `threadPool.minThreads` to keep threads active
+* Fixed incorrect extern in "lime/graphics/opengl/ext" classes on HTML5
+* Fixed incorrect `imageBuffer.bitsPerPixel` handling in `Font.renderGlyph`
+* Fixed incorrect offset when using `image.copyPixels` with an alpha image
+* Fixed Java `HaxeObject.create` to return `null` if handle is `null`
+* Fixed exposure of generated `__ASSET__` classes to display completion
+
+
+7.2.1 (01/07/2019)
+------------------
+
+* Updated howler.js to 2.1.0
+* Improved the internal HTTP request limit for better transfer speed on HTML5
+* Improved the performance for native HTTP requests
+* Improved the quality of embedded font meta-data on the HTML5 target
+* Improved `lime.utils.Assets` to allow disabling or setting the cache break number
+* Fixed `Window` to not dispatch `onClose` on HTML5 (due to some mobile browsers)
+* Fixed ability to cancel context menus on HTML5 when they occur on mouse down
+* Fixed font support for some video game console targets
+
+
+7.2.0 (12/04/2018)
+------------------
+
+* Improved support for Haxe 4 preview 5
+* Improved detection of HTML5 browser key codes to convert to Lime key values
+* Improved support for Turkish lowercase values in `lime.text.UTF8String`
+* Improved `HTTPRequest` with `-Dallow-status-0` to allow code 0 as success
+* Improved project XML to allow `<window background="null" />` or `"transparent"`
+* Improved `fileDialog.save` support optional MIME types on HTML5
+* Improved munit support by enabling headless testing on the AIR target
+* Improved the Electron target template with minor updates
+* Improved the standard index.html template for cases when the window is transparent
+* Improved performance when converting `lime.utils.DataPointer` on the C++ target
+* Improved support for native `Clipboard` events
+* Improved use of the `-rebuild` flag when targeting Neko on Windows
+* Fixed a memory leak when certain kinds of bytes were loaded from disk
+* Fixed a possible multi-thread crash in Lime native Bytes
+* Fixed the failure case when loading corrupted PNG images
+* Fixed an issue where `window.cursor = null` did not hide the cursor on HTML5
+* Fixed cases where the HTML5 backend attempted to cancel non-cancelable events
+* Fixed support for `Font.renderGlyph` and `Font.renderGlyphs`
+* Fixed an error in `haxe.Timer` if `System.getTimer` returned 0
+* Fixed native libraries to build with SSE3 support for better performance
+* Fixed use of the `-Ddom` define to force HTML5 DOM render mode
+
+
+7.1.1 (10/02/2018)
+------------------
+
+* Improved the timing on native `HTTPRequest` to process more quickly
+* Improved handling of `haxe.Timer` to pause and resume when the application suspends
+* Fixed `lime rebuild mac` using Xcode 10 (disabled 32-bit rebuilds by default)
+* Fixed an issue in the newer howler.js library regarding IE support
+* Fixed a regression in older desktop CPU support
+* Fixed an issue when using larger than 64-bit background color values on Flash
+* Fixed `context.antialiasing` setting on HTML5 `Window`
+
+
 7.1.0 (09/26/2018)
 ------------------
 
@@ -15,6 +121,7 @@
 * Improved use of howler.js to enable sound position
 * Improved HTML5 support for certain MP3 audio files
 * Improved `Image.loadFromBase64`/`Image.fromBase64` to work on non-HTML5 platforms
+* Fixed a possible error when processing directories ending in ".bundle"
 * Fixed an issue where multiple `HTTPRequest` instances on native could hang
 * Fixed support for `<library type="zip" />` as an alias for type "deflate"
 * Fixed minor issues in `TextField` when working with non-UTF8 `String` values

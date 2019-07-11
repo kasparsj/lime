@@ -25,7 +25,12 @@ namespace lime {
 
 	SDLApplication::SDLApplication () {
 
-		if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_TIMER | SDL_INIT_JOYSTICK) != 0) {
+		Uint32 initFlags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_TIMER | SDL_INIT_JOYSTICK;
+		#if defined(LIME_MOJOAL) || defined(LIME_OPENALSOFT)
+		initFlags |= SDL_INIT_AUDIO;
+		#endif
+
+		if (SDL_Init (initFlags) != 0) {
 
 			printf ("Could not initialize SDL: %s.\n", SDL_GetError ());
 
@@ -901,7 +906,7 @@ namespace lime {
 
 			if (currentUpdate >= nextUpdate) {
 
-				SDL_RemoveTimer (timerID);
+				if (timerActive) SDL_RemoveTimer (timerID);
 				OnTimer (0, 0);
 
 			} else if (!timerActive) {
@@ -936,7 +941,7 @@ namespace lime {
 
 	int SDLApplication::WaitEvent (SDL_Event *event) {
 
-		#ifdef HX_MACOS
+		#if defined(HX_MACOS) || defined(ANDROID)
 
 		System::GCEnterBlocking ();
 		int result = SDL_WaitEvent (event);

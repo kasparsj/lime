@@ -1,9 +1,9 @@
 package lime.tools;
 
-
-enum AssetType {
-
+enum AssetType
+{
 	BINARY;
+	BUNDLE;
 	FONT;
 	IMAGE;
 	MANIFEST;
@@ -12,5 +12,4 @@ enum AssetType {
 	SOUND;
 	TEMPLATE;
 	TEXT;
-
 }
