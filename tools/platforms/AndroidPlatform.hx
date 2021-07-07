@@ -54,8 +54,8 @@ class AndroidPlatform extends PlatformTarget
 		var hxml = targetDirectory + "/haxe/" + buildType + ".hxml";
 		var sourceSet = destination + "/app/src/main";
 
-		var hasARMV5 = (ArrayTools.containsValue(project.architectures, Architecture.ARMV5) || ArrayTools.containsValue(project.architectures, Architecture
-				.ARMV6));
+		var hasARMV5 = (ArrayTools.containsValue(project.architectures, Architecture.ARMV5)
+			|| ArrayTools.containsValue(project.architectures, Architecture.ARMV6));
 		var hasARMV7 = ArrayTools.containsValue(project.architectures, Architecture.ARMV7);
 		var hasARM64 = ArrayTools.containsValue(project.architectures, Architecture.ARM64);
 		var hasX86 = ArrayTools.containsValue(project.architectures, Architecture.X86);
@@ -105,9 +105,12 @@ class AndroidPlatform extends PlatformTarget
 			}
 			else if (architecture == Architecture.X64)
 			{
+				haxeParams = [hxml, "-D", "android", "-D", "PLATFORM=android-21"];
+				cppParams = ["-Dandroid", "-DPLATFORM=android-21"];
+
 				haxeParams.push("-D");
-				haxeParams.push("HXCPP_M64");
-				cppParams.push("-DHXCPP_M64");
+				haxeParams.push("HXCPP_X86_64");
+				cppParams.push("-DHXCPP_X86_64");
 				path = sourceSet + "/jniLibs/x86_64";
 				suffix = "-x86_64.so";
 			}
@@ -208,11 +211,11 @@ class AndroidPlatform extends PlatformTarget
 		}
 		else
 		{
-			Sys.println(getDisplayHXML());
+			Sys.println(getDisplayHXML().toString());
 		}
 	}
 
-	private function getDisplayHXML():String
+	private function getDisplayHXML():HXML
 	{
 		var path = targetDirectory + "/haxe/" + buildType + ".hxml";
 
@@ -233,25 +236,38 @@ class AndroidPlatform extends PlatformTarget
 
 	public override function install():Void
 	{
-		var build = "-debug";
+		var build = "debug";
 
 		if (project.keystore != null)
 		{
-			build = "-release";
+			build = "release";
+		}
+
+		if (project.environment.exists("ANDROID_GRADLE_TASK"))
+		{
+			var task = project.environment.get("ANDROID_GRADLE_TASK");
+			if (task == "assembleDebug")
+			{
+				build = "debug";
+			}
+			else
+			{
+				build = "release";
+			}
 		}
 
 		var outputDirectory = null;
 
 		if (project.config.exists("android.gradle-build-directory"))
 		{
-			outputDirectory = Path.combine(project.config.getString("android.gradle-build-directory"), project.app.file + "/app/outputs/apk");
+			outputDirectory = Path.combine(project.config.getString("android.gradle-build-directory"), project.app.file + "/app/outputs/apk/" + build);
 		}
 		else
 		{
-			outputDirectory = Path.combine(FileSystem.fullPath(targetDirectory), "bin/app/build/outputs/apk");
+			outputDirectory = Path.combine(FileSystem.fullPath(targetDirectory), "bin/app/build/outputs/apk/" + build);
 		}
 
-		var apkPath = Path.combine(outputDirectory, project.app.file + build + ".apk");
+		var apkPath = Path.combine(outputDirectory, project.app.file + "-" + build + ".apk");
 
 		deviceID = AndroidHelper.install(project, apkPath, deviceID);
 	}
@@ -272,7 +288,7 @@ class AndroidPlatform extends PlatformTarget
 		if (armv7) commands.push(["-Dandroid", "-DHXCPP_ARMV7", "-DHXCPP_ARM7", "-DPLATFORM=android-16"]);
 		if (arm64) commands.push(["-Dandroid", "-DHXCPP_ARM64", "-DPLATFORM=android-21"]);
 		if (x86) commands.push(["-Dandroid", "-DHXCPP_X86", "-DPLATFORM=android-16"]);
-		if (x64) commands.push(["-Dandroid", "-DHXCPP_M64", "-DPLATFORM=android-21"]);
+		if (x64) commands.push(["-Dandroid", "-DHXCPP_X86_64", "-DPLATFORM=android-21"]);
 
 		CPPHelper.rebuild(project, commands);
 	}
@@ -368,8 +384,9 @@ class AndroidPlatform extends PlatformTarget
 			"android.permission.VIBRATE",
 			"android.permission.ACCESS_NETWORK_STATE"
 		]);
-		context.ANDROID_GRADLE_VERSION = project.config.getString("android.gradle-version", "2.10");
-		context.ANDROID_GRADLE_PLUGIN = project.config.getString("android.gradle-plugin", "2.1.0");
+		context.ANDROID_GRADLE_VERSION = project.config.getString("android.gradle-version", "5.6.3");
+		context.ANDROID_GRADLE_PLUGIN = project.config.getString("android.gradle-plugin", "3.5.1");
+
 		context.ANDROID_LIBRARY_PROJECTS = [];
 
 		if (!project.environment.exists("ANDROID_SDK") || !project.environment.exists("ANDROID_NDK_ROOT"))
@@ -403,8 +420,8 @@ class AndroidPlatform extends PlatformTarget
 		if (Reflect.hasField(context, "KEY_STORE")) context.KEY_STORE = StringTools.replace(context.KEY_STORE, "\\", "\\\\");
 		if (Reflect.hasField(context, "KEY_STORE_ALIAS")) context.KEY_STORE_ALIAS = StringTools.replace(context.KEY_STORE_ALIAS, "\\", "\\\\");
 		if (Reflect.hasField(context, "KEY_STORE_PASSWORD")) context.KEY_STORE_PASSWORD = StringTools.replace(context.KEY_STORE_PASSWORD, "\\", "\\\\");
-		if (Reflect.hasField(context, "KEY_STORE_ALIAS_PASSWORD")) context.KEY_STORE_ALIAS_PASSWORD = StringTools.replace(context
-			.KEY_STORE_ALIAS_PASSWORD, "\\", "\\\\");
+		if (Reflect.hasField(context,
+			"KEY_STORE_ALIAS_PASSWORD")) context.KEY_STORE_ALIAS_PASSWORD = StringTools.replace(context.KEY_STORE_ALIAS_PASSWORD, "\\", "\\\\");
 
 		var index = 1;
 
@@ -413,7 +430,8 @@ class AndroidPlatform extends PlatformTarget
 			if (dependency.path != ""
 				&& FileSystem.exists(dependency.path)
 				&& FileSystem.isDirectory(dependency.path)
-				&& (FileSystem.exists(Path.combine(dependency.path, "project.properties")) || FileSystem.exists(Path.combine(dependency.path, "build.gradle"))))
+				&& (FileSystem.exists(Path.combine(dependency.path, "project.properties"))
+					|| FileSystem.exists(Path.combine(dependency.path, "build.gradle"))))
 			{
 				var name = dependency.name;
 				if (name == "") name = "project" + index;
@@ -479,7 +497,7 @@ class AndroidPlatform extends PlatformTarget
 			// }
 		}
 
-		for (library in context.ANDROID_LIBRARY_PROJECTS)
+		for (library in cast(context.ANDROID_LIBRARY_PROJECTS, Array<Dynamic>))
 		{
 			System.recursiveCopy(library.source, destination + "/deps/" + library.name, context, true);
 		}
@@ -502,7 +520,15 @@ class AndroidPlatform extends PlatformTarget
 
 	public override function watch():Void
 	{
-		var dirs = []; // WatchHelper.processHXML (getDisplayHXML (), project.app.path);
+		var hxml = getDisplayHXML();
+		var dirs = hxml.getClassPaths(true);
+
+		var outputPath = Path.combine(Sys.getCwd(), project.app.path);
+		dirs = dirs.filter(function(dir)
+		{
+			return (!Path.startsWith(dir, outputPath));
+		});
+
 		var command = ProjectHelper.getCurrentCommand();
 		System.watch(command, dirs);
 	}

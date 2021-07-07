@@ -126,7 +126,11 @@ class AIRWindow extends FlashWindow
 			// nativeWindow.addEventListener (Event.RESIZE, handleWindowEvent);
 			nativeWindow.addEventListener(NativeWindowBoundsEvent.MOVE, handleNativeWindowEvent);
 
-			nativeWindow.visible = !hidden;
+			if (hidden)
+			{
+				nativeWindow.visible = false;
+			}
+
 			// nativeWindow.activate ();
 			nativeWindow.alwaysInFront = alwaysOnTop;
 			nativeWindow.title = title;
@@ -203,7 +207,6 @@ class AIRWindow extends FlashWindow
 			// 	parent.onResize.dispatch (parent.__width, parent.__height);
 
 			case NativeWindowBoundsEvent.MOVE:
-
 				parent.onMove.dispatch(nativeWindow.x, nativeWindow.y);
 
 			default:

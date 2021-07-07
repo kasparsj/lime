@@ -24,7 +24,6 @@ import sys.thread.Thread;
 import neko.vm.Thread;
 #end
 #end
-
 class FlashPlatform extends PlatformTarget
 {
 	private var embedded:Bool;
@@ -59,13 +58,13 @@ class FlashPlatform extends PlatformTarget
 
 	public override function display():Void
 	{
-		if (project.targetFlags.exists ("output-file"))
+		if (project.targetFlags.exists("output-file"))
 		{
-			Sys.println (Path.combine(targetDirectory, "bin/" + project.app.file + ".swf"));
+			Sys.println(Path.combine(targetDirectory, "bin/" + project.app.file + ".swf"));
 		}
 		else
 		{
-			Sys.println(getDisplayHXML());
+			Sys.println(getDisplayHXML().toString());
 		}
 	}
 
@@ -109,7 +108,7 @@ class FlashPlatform extends PlatformTarget
 		return context;
 	}
 
-	private function getDisplayHXML():String
+	private function getDisplayHXML():HXML
 	{
 		var path = targetDirectory + "/haxe/" + buildType + ".hxml";
 
@@ -155,11 +154,12 @@ class FlashPlatform extends PlatformTarget
 				if (traceEnabled)
 				{
 					#if neko
-					Thread.create(function() {
+					Thread.create(function()
+					{
 					#end
 
-					FlashHelper.run(project, destination, targetPath);
-					// Sys.exit (0);
+						FlashHelper.run(project, destination, targetPath);
+						// Sys.exit (0);
 
 					#if neko
 					});
@@ -263,7 +263,15 @@ class FlashPlatform extends PlatformTarget
 	}*/
 	public override function watch():Void
 	{
-		var dirs = []; // WatchHelper.processHXML (getDisplayHXML (), project.app.path);
+		var hxml = getDisplayHXML();
+		var dirs = hxml.getClassPaths(true);
+
+		var outputPath = Path.combine(Sys.getCwd(), project.app.path);
+		dirs = dirs.filter(function(dir)
+		{
+			return (!Path.startsWith(dir, outputPath));
+		});
+
 		var command = ProjectHelper.getCurrentCommand();
 		System.watch(command, dirs);
 	}

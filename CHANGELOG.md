@@ -1,3 +1,119 @@
+7.9.0 (03/10/2021)
+------------------
+
+_Notice: We are moving from our custom build server to Github Actions for releases._
+_As a result, official releases support only current macOS versions. Earlier macOS_
+_releases are still supported when building Lime from the source._
+
+* Updated support for Haxe 4.2
+* Updated the default iOS deployment to 9.0
+* Updated `ios-deploy` tool to support newer iOS and Xcode versions
+* Added `failIfMajorPerformanceCaveat` setting for window (default false)
+* Added bindings for OGG Vorbis on the HashLink target
+* Improved iOS target to exclude Core Bluetooth framework
+* Improved the performance for AIR application boot times
+* Improved error message when attempting to use HashLink target on Haxe 3
+* Fixed support for Android screen orientation
+* Fixed touch support on Android hardware that return unusual touch IDs
+* Fixed an issue with excess bytes saved from `FileDialog` on HTML5
+* Fixed null-termination issues on strings returned from `lime.system.System`
+* Fixed support for IEM input text on HTML5
+* Fixed audio stutter on HTML5 when `force-html-audio` is defined
+
+
+7.8.0 (06/24/2020)
+------------------
+
+* Updated to SDL 2.0.12
+* Updated Google Closure to v20200315
+* Added support for *.xcframework dependencies on iOS
+* Added support for merging "-Info.plist" files from native extensions on iOS
+* Fixed warnings when compiling on HTML5 using Haxe 4.1
+* Fixed HTML5 focus to return to previous element after using `lime.app.Clipboard`
+* Fixed an unnecessary `setTextInputEnabled` workaround on Android
+* Fixed return type for `gl.getParameter(GL.RENDERBUFFER_BINDING)`
+* Fixed old default iOS simulator version
+* Fixed the search string for HaxeObject/JNI to be more precise
+* Fixed support for building using `-Djs-es=6`
+
+
+7.7.0 (01/27/2020)
+------------------
+
+* Updated SDL with a patch for high DPI resolution on macOS
+* Updated tinyfiledialogs with a Unicode patch on Windows
+* Updated macOS to use OpenAL-Soft (rather than deprecated Apple OpenAL library)
+* Added missing properties/methods to `lime.utils.ArrayBuffer`
+* Added support for NVX_gpu_memory_info OpenGL extension
+* Added support for using launch storyboards instead of launch images on iOS
+* Updated Android template to use Gradle 5.6.3 and Android Gradle Plugin 3.5.1
+* Improved `Assets.unloadLibrary` to allow unloading the default asset library
+* Improved HTML5 WebGL to fallback to canvas if "major performance caveat"
+* Improved the Electron output template to work without `-lib hxelectron`
+* Improved support for x86-64 on Android target
+* Improved handling of asset library root paths
+* Improved garbage collection performance on `GLRenderbuffer`
+* Fixed "auto" window orientation in the AIR template
+* Fixed launch of iOS simulator on some systems
+* Fixed support for `Clipboard` on HTML5
+* Fixed minimize/maximize on some desktop windows that are not resizable
+* Fixed `Image.fromBitmapData` to set `buffer.transparent`
+* Fixed some issues when toggling fullscreen on Android
+* Fixed a potential crash when getting the system locale on iOS or macOS
+* Fixed cleanup of Howler.js sounds after they are stopped
+* Fixed `FileDialog` to not return as completed if the path is an empty string
+* Fixed the default launch screen sizes on the iOS target
+* Fixed Gradle paths to jcenter/Google for HTTPS support
+
+
+7.6.3 (09/11/2019)
+------------------
+
+* Fixed copying of 64-bit binaries when using Neko on Windows with Haxe 4
+* Fixed support for both 32- and 64-bit Neko on Windows (for Haxe 3 and 4)
+* Fixed support for loading `HTTPRequest` data using the HL target
+
+
+7.6.2 (09/05/2019)
+------------------
+
+* Fixed support for 64-bit Neko on Windows (included in Haxe 4 RC 4)
+
+
+7.6.1 (09/04/2019)
+------------------
+
+* Fixed support for array-based form parameters when making HTTP requests
+* Fixed incorrect default root path for asset manifests on some platforms
+* Fixed a crash on the HL target when pasting non-text data
+
+
+7.6.0 (08/20/2019)
+------------------
+
+* Updated support for Haxe 4 dev versions
+* Updated SDL to 2.10
+* Updated the default Android target API to 28 (per Google guidelines)
+* Updated HashLink support to 1.10 (requires Haxe 4 RC3 or greater)
+* Added official support for Android ARM64 architecture
+* Added ARM64 as a default architecture in Android builds
+* Added `lime.utils.AssetBundle` for standard compressed libraries
+* Added support for pure JSON-based asset manifest data
+* Added AMD support to generated JavaScript output
+* Added `remove` to `lime.utils.ObjectPool`
+* Added initial support for `window.onMove` on the AIR target
+* Improved the performance of `Image.loadFromBytes` on HTML5
+* Improved `DataPointer` to be a more reliable implementation in JavaScript
+* Improved support for pre-generated asset libraries
+* Improved the same origin check for `HTTPRequest` data-based URIs
+* Improved the native main loop behavior on the Android target
+* Fixed a compile error when using `flash.system.SystemIdleMode`
+* Fixed issues with WebGL on the HTML5 target caused by `DataPointer`
+* Fixed an issue where antialiasing was always enabled on HTML5
+* Fixed the behavior of `image.copyPixels` in a few cases
+* Fixed minor issues when using the `-npm` HTML5 template
+
+
 7.5.0 (05/14/2019)
 ------------------
 

@@ -70,7 +70,7 @@ namespace lime {
 		}
 		#endif
 
-		#ifndef EMSCRIPTEN
+		#if !defined(EMSCRIPTEN) && !defined(LIME_SWITCH)
 		SDL_SetHint (SDL_HINT_ANDROID_TRAP_BACK_BUTTON, "0");
 		SDL_SetHint (SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "1");
 		SDL_SetHint (SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
@@ -163,6 +163,7 @@ namespace lime {
 		if (!sdlWindow) {
 
 			printf ("Could not create SDL window: %s.\n", SDL_GetError ());
+			return;
 
 		}
 

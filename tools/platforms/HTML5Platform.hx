@@ -43,7 +43,8 @@ class HTML5Platform extends PlatformTarget
 			{
 				var buildCommand = "build:" + (project.targetFlags.exists("final") ? "prod" : "dev");
 				System.runCommand(targetDirectory + "/bin", "npm", ["run", buildCommand, "-s"]);
-			} else
+			}
+			else
 			{
 				return;
 			}
@@ -134,11 +135,11 @@ class HTML5Platform extends PlatformTarget
 		}
 		else
 		{
-			Sys.println(getDisplayHXML());
+			Sys.println(getDisplayHXML().toString());
 		}
 	}
 
-	private function getDisplayHXML():String
+	private function getDisplayHXML():HXML
 	{
 		var path = targetDirectory + "/haxe/" + buildType + ".hxml";
 
@@ -295,9 +296,15 @@ class HTML5Platform extends PlatformTarget
 
 		if (npm)
 		{
+			var path;
 			for (i in 0...project.sources.length)
 			{
-				project.sources[i] = Path.tryFullPath(project.sources[i]);
+				path = project.sources[i];
+				if (StringTools.startsWith(path, targetDirectory) && !FileSystem.exists(Path.directory(path)))
+				{
+					System.mkdir(Path.directory(path));
+				}
+				project.sources[i] = Path.tryFullPath(path);
 			}
 		}
 
@@ -360,15 +367,23 @@ class HTML5Platform extends PlatformTarget
 			}
 		}
 
+		var createdDirectories = new Map<String, Bool>();
+		var dir = null;
+
 		for (asset in project.assets)
 		{
 			var path = Path.combine(destination, asset.targetPath);
 
 			if (asset.type != AssetType.TEMPLATE)
 			{
-				if ( /*asset.embed != true &&*/ asset.type != AssetType.FONT)
+				if (/*asset.embed != true &&*/ asset.type != AssetType.FONT)
 				{
-					System.mkdir(Path.directory(path));
+					dir = Path.directory(path);
+					if (!createdDirectories.exists(dir))
+					{
+						System.mkdir(dir);
+						createdDirectories.set(dir, true);
+					}
 					AssetHelper.copyAssetIfNewer(asset, path);
 				}
 				else if (asset.type == AssetType.FONT && useWebfonts)
@@ -487,7 +502,15 @@ class HTML5Platform extends PlatformTarget
 	{
 		// TODO: Use a custom live reload HTTP server for test/run instead
 
-		var dirs = []; // WatchHelper.processHXML (getDisplayHXML (), project.app.path);
+		var hxml = getDisplayHXML();
+		var dirs = hxml.getClassPaths(true);
+
+		var outputPath = Path.combine(Sys.getCwd(), project.app.path);
+		dirs = dirs.filter(function(dir)
+		{
+			return (!Path.startsWith(dir, outputPath));
+		});
+
 		var command = ProjectHelper.getCurrentCommand();
 		System.watch(command, dirs);
 	}

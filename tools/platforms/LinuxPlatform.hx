@@ -95,20 +95,21 @@ class LinuxPlatform extends PlatformTarget
 				// TODO: Support single binary for HashLink
 				if (targetType == "hl")
 				{
-					ProjectHelper.copyLibrary(project, ndll, "Linux" + (is64 ? "64" : ""), "", ".hdll", applicationDirectory, project
-						.debug, targetSuffix);
+					ProjectHelper.copyLibrary(project, ndll, "Linux" + (is64 ? "64" : ""), "", ".hdll", applicationDirectory, project.debug, targetSuffix);
 				}
 				else if (isRaspberryPi)
 				{
 					ProjectHelper.copyLibrary(project, ndll, "RPi", "",
-						(ndll.haxelib != null && (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dso" : ".ndll", applicationDirectory,
+						(ndll.haxelib != null
+							&& (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dso" : ".ndll", applicationDirectory,
 						project.debug, targetSuffix);
 				}
 				else
 				{
 					ProjectHelper.copyLibrary(project, ndll, "Linux" + (is64 ? "64" : ""), "",
-						(ndll.haxelib != null && (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dll" : ".ndll",
-						applicationDirectory, project.debug, targetSuffix);
+						(ndll.haxelib != null
+							&& (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dll" : ".ndll", applicationDirectory,
+						project.debug, targetSuffix);
 				}
 			}
 		}
@@ -162,8 +163,9 @@ class LinuxPlatform extends PlatformTarget
 
 			if (haxeVersion.length > 4)
 			{
-				haxeVersionString = haxeVersion.charAt(0) + haxeVersion.charAt(2) + (haxeVersion.length == 5 ? "0" + haxeVersion.charAt(4) : haxeVersion
-					.charAt(4) + haxeVersion.charAt(5));
+				haxeVersionString = haxeVersion.charAt(0)
+					+ haxeVersion.charAt(2)
+					+ (haxeVersion.length == 5 ? "0" + haxeVersion.charAt(4) : haxeVersion.charAt(4) + haxeVersion.charAt(5));
 			}
 
 			System.runCommand(targetDirectory + "/obj", "haxelib", ["run", "hxjava", "hxjava_build.txt", "--haxe-version", haxeVersionString]);
@@ -240,7 +242,7 @@ class LinuxPlatform extends PlatformTarget
 		}
 		else
 		{
-			Sys.println(getDisplayHXML());
+			Sys.println(getDisplayHXML().toString());
 		}
 	}
 
@@ -265,7 +267,7 @@ class LinuxPlatform extends PlatformTarget
 		return context;
 	}
 
-	private function getDisplayHXML():String
+	private function getDisplayHXML():HXML
 	{
 		var path = targetDirectory + "/haxe/" + buildType + ".hxml";
 
@@ -280,11 +282,16 @@ class LinuxPlatform extends PlatformTarget
 			hxml.addClassName(context.APP_MAIN);
 			switch (targetType)
 			{
-				case "hl": hxml.hl = "_.hl";
-				case "neko": hxml.neko = "_.n";
-				case "java": hxml.java = "_";
-				case "nodejs": hxml.js = "_.js";
-				default: hxml.cpp = "_";
+				case "hl":
+					hxml.hl = "_.hl";
+				case "neko":
+					hxml.neko = "_.n";
+				case "java":
+					hxml.java = "_";
+				case "nodejs":
+					hxml.js = "_.js";
+				default:
+					hxml.cpp = "_";
 			}
 			hxml.noOutput = true;
 			return hxml;
@@ -438,7 +445,15 @@ class LinuxPlatform extends PlatformTarget
 
 	public override function watch():Void
 	{
-		var dirs = []; // WatchHelper.processHXML (getDisplayHXML (), project.app.path);
+		var hxml = getDisplayHXML();
+		var dirs = hxml.getClassPaths(true);
+
+		var outputPath = Path.combine(Sys.getCwd(), project.app.path);
+		dirs = dirs.filter(function(dir)
+		{
+			return (!Path.startsWith(dir, outputPath));
+		});
+
 		var command = ProjectHelper.getCurrentCommand();
 		System.watch(command, dirs);
 	}

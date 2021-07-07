@@ -156,8 +156,7 @@ class FileDialog
 		#end
 	}
 
-	public function save(data:Resource, filter:String = null, defaultPath:String = null, title:String = null,
-			type:String = "application/octet-stream"):Bool
+	public function save(data:Resource, filter:String = null, defaultPath:String = null, title:String = null, type:String = "application/octet-stream"):Bool
 	{
 		if (data == null)
 		{
@@ -224,9 +223,10 @@ class FileDialog
 
 		var path = defaultPath != null ? Path.withoutDirectory(defaultPath) : "download" + defaultExtension;
 		var buffer = (data : Bytes).getData();
+		buffer = buffer.slice(0, (data : Bytes).length);
 
 		#if commonjs
-		untyped __js__("require ('file-saver')")(new Blob([buffer], {type: type}), path, true);
+		untyped #if haxe4 js.Syntax.code #else __js__ #end ("require ('file-saver')")(new Blob([buffer], {type: type}), path, true);
 		#else
 		untyped window.saveAs(new Blob([buffer], {type: type}), path, true);
 		#end

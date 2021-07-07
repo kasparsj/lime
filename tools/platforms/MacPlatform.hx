@@ -95,14 +95,14 @@ class MacPlatform extends PlatformTarget
 				// TODO: Support single binary for HashLink
 				if (targetType == "hl")
 				{
-					ProjectHelper.copyLibrary(project, ndll, "Mac" + (is64 ? "64" : ""), "", ".hdll", executableDirectory, project
-						.debug, targetSuffix);
+					ProjectHelper.copyLibrary(project, ndll, "Mac" + (is64 ? "64" : ""), "", ".hdll", executableDirectory, project.debug, targetSuffix);
 				}
 				else
 				{
 					ProjectHelper.copyLibrary(project, ndll, "Mac" + (is64 ? "64" : ""), "",
-						(ndll.haxelib != null && (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dll" : ".ndll",
-						executableDirectory, project.debug, targetSuffix);
+						(ndll.haxelib != null
+							&& (ndll.haxelib.name == "hxcpp" || ndll.haxelib.name == "hxlibc")) ? ".dll" : ".ndll", executableDirectory,
+						project.debug, targetSuffix);
 				}
 			}
 		}
@@ -227,7 +227,7 @@ class MacPlatform extends PlatformTarget
 		}
 		else
 		{
-			Sys.println(getDisplayHXML());
+			Sys.println(getDisplayHXML().toString());
 		}
 	}
 
@@ -243,7 +243,7 @@ class MacPlatform extends PlatformTarget
 		return context;
 	}
 
-	private function getDisplayHXML():String
+	private function getDisplayHXML():HXML
 	{
 		var path = targetDirectory + "/haxe/" + buildType + ".hxml";
 
@@ -258,11 +258,16 @@ class MacPlatform extends PlatformTarget
 			hxml.addClassName(context.APP_MAIN);
 			switch (targetType)
 			{
-				case "hl": hxml.hl = "_.hl";
-				case "neko": hxml.neko = "_.n";
-				case "java": hxml.java = "_";
-				case "nodejs": hxml.js = "_.js";
-				default: hxml.cpp = "_";
+				case "hl":
+					hxml.hl = "_.hl";
+				case "neko":
+					hxml.neko = "_.n";
+				case "java":
+					hxml.java = "_";
+				case "nodejs":
+					hxml.js = "_.js";
+				default:
+					hxml.cpp = "_";
 			}
 			hxml.noOutput = true;
 			return hxml;
@@ -374,7 +379,10 @@ class MacPlatform extends PlatformTarget
 
 		System.copyFileTemplate(project.templatePaths, "mac/Info.plist", targetDirectory + "/bin/" + project.app.file + ".app/Contents/Info.plist", context);
 		System.copyFileTemplate(project.templatePaths, "mac/Entitlements.plist",
-			targetDirectory + "/bin/" + project.app.file + ".app/Contents/Entitlements.plist", context);
+			targetDirectory
+			+ "/bin/"
+			+ project.app.file
+			+ ".app/Contents/Entitlements.plist", context);
 
 		var icons = project.icons;
 
@@ -405,7 +413,15 @@ class MacPlatform extends PlatformTarget
 
 	public override function watch():Void
 	{
-		var dirs = []; // WatchHelper.processHXML (getDisplayHXML (), project.app.path);
+		var hxml = getDisplayHXML();
+		var dirs = hxml.getClassPaths(true);
+
+		var outputPath = Path.combine(Sys.getCwd(), project.app.path);
+		dirs = dirs.filter(function(dir)
+		{
+			return (!Path.startsWith(dir, outputPath));
+		});
+
 		var command = ProjectHelper.getCurrentCommand();
 		System.watch(command, dirs);
 	}

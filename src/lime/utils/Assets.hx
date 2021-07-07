@@ -40,7 +40,6 @@ class Assets
 	public static var onChange = new Event<Void->Void>();
 
 	private static var bundlePaths = new Map<String, String>();
-	private static var defaultRootPath:String;
 	private static var libraries(default, null) = new Map<String, AssetLibrary>();
 	private static var libraryPaths = new Map<String, String>();
 
@@ -432,7 +431,7 @@ class Assets
 				}
 			}).onError(function(_)
 			{
-				promise.error("There is no asset library with an ID of \"" + id + "\"");
+					promise.error("There is no asset library with an ID of \"" + id + "\"");
 			});
 		}
 		else
@@ -440,7 +439,7 @@ class Assets
 			if (libraryPaths.exists(id))
 			{
 				path = libraryPaths[id];
-				rootPath = (defaultRootPath != "" ? defaultRootPath + "/" : "") + Path.directory(path);
+				rootPath = Path.directory(path);
 			}
 			else
 			{
@@ -449,8 +448,10 @@ class Assets
 					rootPath = path;
 					path += "/library.json";
 				}
-
-				rootPath = (defaultRootPath != "" ? defaultRootPath + "/" : "") + Path.directory(path);
+				else
+				{
+					rootPath = Path.directory(path);
+				}
 				path = __cacheBreak(path);
 			}
 
@@ -476,7 +477,7 @@ class Assets
 				}
 			}).onError(function(_)
 			{
-				promise.error("There is no asset library with an ID of \"" + id + "\"");
+					promise.error("There is no asset library with an ID of \"" + id + "\"");
 			});
 		}
 		#end
@@ -514,6 +515,11 @@ class Assets
 	public static function unloadLibrary(name:String):Void
 	{
 		#if (tools && !display)
+		if (name == null || name == "")
+		{
+			name = "default";
+		}
+
 		var library = libraries.get(name);
 
 		if (library != null)

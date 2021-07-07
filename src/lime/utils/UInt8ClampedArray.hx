@@ -9,12 +9,16 @@ import js.html.Uint8Array as JSUInt8Array;
 import js.html.Uint8ClampedArray as JSUInt8ClampedArray;
 #end
 @:forward
-abstract UInt8ClampedArray(JSUInt8ClampedArray) from JSUInt8ClampedArray to JSUInt8ClampedArray to ArrayBufferView
+@:transitive
+abstract UInt8ClampedArray(JSUInt8ClampedArray) from JSUInt8ClampedArray to JSUInt8ClampedArray
 {
+	@:to inline function toArrayBufferView():ArrayBufferView
+		return this;
+
 	public inline static var BYTES_PER_ELEMENT:Int = 1;
 
 	@:generic
-	public inline function new<T>(?elements:Int, ?array:Array<T>, #if openfl ?vector:openfl.Vector<Int>, #end?view:ArrayBufferView, ?buffer:ArrayBuffer,
+	public inline function new<T>(?elements:Int, ?array:Array<T>, #if openfl ?vector:openfl.Vector<Int>, #end ?view:ArrayBufferView, ?buffer:ArrayBuffer,
 			?byteoffset:Int = 0, ?len:Null<Int>)
 	{
 		if (elements != null)
@@ -24,13 +28,17 @@ abstract UInt8ClampedArray(JSUInt8ClampedArray) from JSUInt8ClampedArray to JSUI
 		else if (array != null)
 		{
 			this = new JSUInt8ClampedArray(untyped array);
-			#if (openfl && commonjs)
-			}
-			else if (vector != null) {this = new JSUInt8ClampedArray(untyped (vector));
-			#elseif openfl
-			}
-			else if (vector != null) {this = new JSUInt8ClampedArray(untyped untyped (vector).__array);
-			#end
+		#if (openfl && commonjs)
+		}
+		else if (vector != null)
+		{
+			this = new JSUInt8ClampedArray(untyped (vector));
+		#elseif openfl
+		}
+		else if (vector != null)
+		{
+			this = new JSUInt8ClampedArray(untyped untyped (vector).__array);
+		#end
 		}
 		else if (view != null)
 		{
@@ -86,7 +94,7 @@ abstract UInt8ClampedArray(JSUInt8ClampedArray) from JSUInt8ClampedArray to JSUI
 }
 #else
 import lime.utils.ArrayBufferView;
-
+@:transitive
 @:forward
 @:arrayAccess
 abstract UInt8ClampedArray(ArrayBufferView) from ArrayBufferView to ArrayBufferView
@@ -95,8 +103,8 @@ abstract UInt8ClampedArray(ArrayBufferView) from ArrayBufferView to ArrayBufferV
 
 	public var length(get, never):Int;
 
-	@:generic
-	public inline function new<T>(?elements:Int, ?buffer:ArrayBuffer, ?array:Array<T>, #if openfl ?vector:openfl.Vector<Int>, #end?view:ArrayBufferView,
+	#if (haxe_ver < 4.2) @:generic #end
+	public inline function new<T>(?elements:Int, ?buffer:ArrayBuffer, ?array:Array<T>, #if openfl ?vector:openfl.Vector<Int>, #end ?view:ArrayBufferView,
 			?byteoffset:Int = 0, ?len:Null<Int>)
 	{
 		if (elements != null)
@@ -106,10 +114,12 @@ abstract UInt8ClampedArray(ArrayBufferView) from ArrayBufferView to ArrayBufferV
 		else if (array != null)
 		{
 			this = new ArrayBufferView(0, Uint8Clamped).initArray(array);
-			#if openfl
-			}
-			else if (vector != null) {this = new ArrayBufferView(0, Uint8Clamped).initArray(untyped (vector).__array);
-			#end
+		#if openfl
+		}
+		else if (vector != null)
+		{
+			this = new ArrayBufferView(0, Uint8Clamped).initArray(untyped (vector).__array);
+		#end
 		}
 		else if (view != null)
 		{

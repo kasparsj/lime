@@ -39,17 +39,15 @@ import sys.FileSystem;
 
 			#if (ios || tvos || emscripten)
 			rootPath = "assets/";
+			#elseif android
+			rootPath = "";
 			#elseif console
 			rootPath = lime.system.System.applicationDirectory;
-			#elseif (winrt)
-			rootPath = "./";
 			#else
-			rootPath = "";
+			rootPath = "./";
 			#end
 
 		}
-
-		Assets.defaultRootPath = rootPath;
 
 		#if (openfl && !flash && !display)
 		::if (assets != null)::::foreach assets::::if (type == "font")::openfl.text.Font.registerFont (__ASSET__OPENFL__::flatName::);
